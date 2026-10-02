@@ -269,7 +269,7 @@ kbd{font:var(--fs-1) var(--mono);color:var(--text-3);border:1px solid var(--line
 .record-actions{display:flex;justify-content:space-between;align-items:baseline;gap:16px;margin-bottom:24px}
 .record-actions .back{margin-bottom:0}
 
-.rank-track{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;list-style:none;margin:12px 0 8px;padding:0}
+.rank-track{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;list-style:none;margin:12px 0 8px;padding:0}
 .rank-track li{border-top:4px solid var(--line-strong);padding-top:8px;font-size:var(--fs-2);color:var(--text-3);min-width:0}
 .rank-track li.reached{border-top-color:var(--text-3);color:var(--text-2)}
 .rank-track li.current{border-top-color:var(--accent);color:var(--text);font-weight:600}
@@ -421,3 +421,44 @@ footer a{color:var(--text-2);text-decoration:underline;text-decoration-color:var
 .report-form{margin-top:10px;max-width:560px}.report-form label{margin-bottom:10px}
 .report-body{font-size:var(--fs-2);border-left:2px solid var(--line-strong);padding-left:12px}
 @media(max-width:700px){.portrait-row,.portrait-queue li{flex-direction:column}.thread-tags{justify-content:flex-start}.message-actions{margin-left:0;width:100%}}
+
+/* Clan terms beside plain field names: secondary, never the label itself. */
+.term-note{display:block;margin-top:2px;font:400 var(--fs-1)/1.4 'Archivo',sans-serif;letter-spacing:0;text-transform:none;color:var(--text-3)}
+label .term-note{display:inline;margin-left:8px}
+.term-note a{color:var(--text-2);text-decoration:underline;text-decoration-color:var(--line-strong)}
+
+/* Senior standing: an engraved title with a sight bracket, then offices as a plain list. */
+.standing-block{max-width:720px}
+.standing-title{position:relative;margin:12px 0 4px;padding:6px 0 6px 18px;font:600 var(--fs-4)/1.3 var(--display);letter-spacing:.08em;text-transform:uppercase;color:var(--text)}
+.standing-title:before{content:'';position:absolute;left:0;top:0;bottom:0;width:8px;border:2px solid var(--accent);border-right:0}
+.standing-title span{color:var(--text-2)}
+.offices{list-style:none;margin:8px 0 0;padding:0}
+.offices li{display:flex;justify-content:space-between;align-items:baseline;gap:16px;padding:10px 0;border-bottom:1px solid var(--line)}
+.offices li:last-child{border-bottom:0}
+.offices li small{font-size:var(--fs-1);text-align:right}
+.offices li.past a{color:var(--text-2)}
+
+.authority{margin:8px 0 0}
+.authority>div{display:grid;grid-template-columns:minmax(0,11em) minmax(0,1fr);gap:16px;padding:10px 0;border-bottom:1px solid var(--line)}
+.authority>div:last-child{border-bottom:0}
+.authority dt{font:500 var(--fs-1) var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--text-3);padding-top:3px}
+.authority dd{margin:0}
+.authority .council dd{font:600 var(--fs-4)/1.3 var(--display);letter-spacing:.02em}
+.authority .council dd a{box-shadow:inset 0 -2px var(--accent-strong)}
+.authority .council dd a:hover{text-decoration:none;box-shadow:inset 0 -2px var(--accent)}
+.seniors li>span small{font-size:var(--fs-1)}
+
+.duty-table tbody th{font-weight:600}
+.duty-table .dates{font:var(--fs-1) var(--mono);color:var(--text-3);white-space:nowrap}
+.duty-table tbody tr:last-child>*{border-bottom:0}
+@media(max-width:700px){
+ .duty-table thead{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+ .duty-table tbody tr{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:16px;row-gap:2px;padding:12px 0;border-bottom:1px solid var(--line)}
+ .duty-table tbody tr>*{border:0;padding:0}
+ .duty-table tbody th{grid-column:1/-1}
+ .duty-table tbody td{font-size:var(--fs-2)}
+ .duty-table tbody td:nth-of-type(2),.duty-table tbody td:nth-of-type(4){text-align:right}
+ .duty-table tbody td:nth-of-type(n+2){color:var(--text-3)}
+ .authority>div{grid-template-columns:1fr;gap:2px}
+ .offices li{flex-direction:column;gap:2px}.offices li small{text-align:left}
+}

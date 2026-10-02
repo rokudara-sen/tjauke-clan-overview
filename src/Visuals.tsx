@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { active, rankSteps, schemas, serviceRecord, type Dataset, type Kind, type RecordData } from './model';
+import { active, currentDuty, rankLabel, rankSteps, schemas, serviceRecord, standingHistory, standingOf, warriorRank, warriorRanks, type Dataset, type Kind, type RecordData } from './model';
 export const href=(kind:string,id?:string)=>`#/${kind}${id?'/'+encodeURIComponent(id):''}`;
 const options=(kind:Kind,key:string)=>schemas[kind].fields.find(f=>f.key===key)?.options||[];
 const slug=(v:unknown)=>String(v||'unclassified').toLowerCase().replace(/[^a-z]+/g,'-');
@@ -17,11 +17,19 @@ function householdRows(data:Dataset,used:Set<string>):Row[]{
 const houseKey=(data:Dataset,house:unknown)=>house&&active(data.houses).some(h=>h.id===house)?String(house):NONE;
 const withUnlisted=(cols:string[],values:string[],fallback:string)=>values.some(v=>!cols.includes(v))?[...cols,fallback]:cols;
 
-export function HouseRanks({data}:{data:Dataset}){
- const members=active(data.members);if(!members.length)return <p className="empty">No hunters recorded.</p>;
- const ranks=options('members','rank'),cols=withUnlisted(ranks,members.map(m=>String(m.rank||'')),'Not recorded');
- const items=members.sort(byName).map(m=>({row:houseKey(data,m.house),col:ranks.includes(String(m.rank))?String(m.rank):'Not recorded',label:`${m.name}, ${m.rank||'rank not recorded'}`,to:href('members',m.id)}));
- return <DotMatrix caption="Hunters in each household by rank, lowest rank first" corner="Household" rows={householdRows(data,new Set(items.map(i=>i.row)))} cols={cols} items={items}/>;
+/** Warrior caste only. Hunters with senior standing are listed separately, not as higher rungs of this ladder. */
+export function WarriorComposition({data}:{data:Dataset}){
+ const members=active(data.members).filter(m=>!standingOf(m));if(!members.length)return <p className="empty">No warrior caste hunters recorded.</p>;
+ const cols=withUnlisted(warriorRanks,members.map(warriorRank),'Not recorded');
+ const items=members.sort(byName).map(m=>({row:houseKey(data,m.house),col:warriorRank(m)||'Not recorded',label:`${m.name}, ${warriorRank(m)||'rank not recorded'}`,to:href('members',m.id)}));
+ return <DotMatrix caption="Warrior caste hunters in each household by rank" corner="Household" rows={householdRows(data,new Set(items.map(i=>i.row)))} cols={cols} items={items}/>;
+}
+
+/** Elders, Clan Leader and Ancients grouped by household. */
+export function SeniorStanding({data}:{data:Dataset}){
+ const seniors=active(data.members).filter(m=>standingOf(m)).sort(byName);if(!seniors.length)return <p className="empty">No hunter holds senior standing.</p>;
+ const groups=[...active(data.houses).sort(byName).map(h=>({key:h.id,label:<a href={href('houses',h.id)}>{h.name}</a>,rows:seniors.filter(m=>m.house===h.id)})),{key:NONE,label:<span className="muted">No household</span>,rows:seniors.filter(m=>houseKey(data,m.house)===NONE)}].filter(g=>g.rows.length);
+ return <ul className="record-list compact seniors">{groups.map(g=><li key={g.key}>{g.label}<span>{g.rows.map((m,i)=><span key={m.id}>{i>0&&', '}<a href={href('members',m.id)}>{m.name}</a> <small>{standingOf(m)}</small></span>)}</span></li>)}</ul>;
 }
 
 export function HuntOutcomes({data}:{data:Dataset}){
@@ -37,7 +45,7 @@ export function Lineage({data}:{data:Dataset}){
  const house=(m:RecordData)=>data.houses.find(h=>h.id===m.house)?.name;
  const roots=members.filter(m=>!m.sponsor||m.sponsor===m.id||!ids.has(String(m.sponsor))).sort((a,b)=>String(house(a)||'~').localeCompare(String(house(b)||'~'))||byName(a,b));
  const node=(m:RecordData,seen:Set<string>,parent?:RecordData):ReactNode=>{const kids=seen.has(m.id)?[]:members.filter(k=>k.sponsor===m.id&&k.id!==m.id).sort(byName);const next=new Set(seen).add(m.id);
-  return <li key={m.id}><div className="node"><a href={href('members',m.id)}>{m.name}</a><small>{[m.rank||'Rank not recorded',house(m),seniors.has(m.id)&&'household senior',parent&&parent.house!==m.house&&`sponsored from ${house(parent)||'outside a household'}`,m.sponsor&&!ids.has(String(m.sponsor))&&'sponsor not listed'].filter(Boolean).join(' · ')}</small></div>{kids.length>0&&<ul>{kids.map(k=>node(k,next,m))}</ul>}</li>;};
+  return <li key={m.id}><div className="node"><a href={href('members',m.id)}>{m.name}</a><small>{[rankLabel(m)||'Rank not recorded',house(m),seniors.has(m.id)&&'household senior',parent&&parent.house!==m.house&&`sponsored from ${house(parent)||'outside a household'}`,m.sponsor&&!ids.has(String(m.sponsor))&&'sponsor not listed'].filter(Boolean).join(' · ')}</small></div>{kids.length>0&&<ul>{kids.map(k=>node(k,next,m))}</ul>}</li>;};
  return <ul className="lineage">{roots.map(r=>node(r,new Set()))}</ul>;
 }
 
@@ -49,12 +57,31 @@ export function Timeline({rows}:{rows:RecordData[]}){
 }
 
 export function RankTrack({member,data}:{member:RecordData;data:Dataset}){
- if(!member.rank)return <p className="empty">Rank not recorded.</p>;
- const steps=rankSteps(member,data),recorded=steps.some(s=>s.promotion);
- return <><ol className="rank-track" aria-label={`Rank: ${member.rank}`}>{steps.map(s=><li key={s.rank} className={s.current?'current':s.reached?'reached':undefined} aria-current={s.current?'step':undefined}>
+ const rank=warriorRank(member),steps=rankSteps(member,data),recorded=steps.some(s=>s.promotion);
+ const note=!rank?(standingOf(member)?'The warrior caste rank held before senior standing is not recorded.':'Warrior caste rank not recorded.'):!recorded?'No advancements recorded yet. The current rank comes from the hunter record.':'';
+ return <><ol className="rank-track" aria-label={rank?`Warrior caste rank: ${rank}`:'Warrior caste rank not recorded'}>{steps.map(s=><li key={s.rank} className={s.current?'current':s.reached?'reached':undefined} aria-current={s.current?'step':undefined}>
   <span className="rank-name">{s.rank}</span>
   {s.promotion&&<a href={href('promotions',s.promotion.id)}>{s.promotion.date||s.promotion.era||'Recorded'}</a>}
- </li>)}</ol>{!recorded&&<p className="section-note">No promotions recorded yet. The current rank comes from the hunter record.</p>}</>;
+ </li>)}</ol>{note&&<p className="section-note">{note}</p>}</>;
+}
+
+/** Senior standing, earlier standings no longer held, and appointments. Not a continuation of the rank track. */
+export function StandingOffices({member,data}:{member:RecordData;data:Dataset}){
+ const standing=standingOf(member),{entries,former}=standingHistory(member,data);
+ const duties=active(data.duties).filter(d=>d.member===member.id),current=duties.filter(currentDuty),past=duties.filter(d=>!currentDuty(d));
+ const house=(id:unknown)=>data.houses.find(h=>h.id===id);
+ // A household senior recorded on the household without a matching duty record still shows.
+ const seniorOf=active(data.houses).filter(h=>h.senior===member.id&&!current.some(d=>d.house===h.id));
+ if(!standing&&!former.length&&!duties.length&&!seniorOf.length)return <p className="empty">No senior standing or offices recorded.</p>;
+ return <div className="standing-block">
+  {standing?<p className="standing-title">{standing}{standing==='Ancient'&&<span> · Council of Ancients</span>}</p>:<p className="section-note">No senior standing. Offices are appointments, not ranks.</p>}
+  {(former.length>0||current.length>0||past.length>0||seniorOf.length>0)&&<ul className="offices">
+   {former.map(s=>{const e=entries.find(p=>(p.rank==='Leader'?'Clan Leader':p.rank)===s)!;return <li key={s}><a href={href('promotions',e.id)}>Former {s}</a>{(e.date||e.era)&&<small>{String(e.date||e.era)}</small>}</li>;})}
+   {current.map(d=><li key={d.id}><a href={href('duties',d.id)}>{d.name}</a><small>{[d.status==='Acting'&&'Acting',house(d.house)?.name,d.start&&`since ${d.start}`].filter(Boolean).join(' · ')}</small></li>)}
+   {seniorOf.map(h=><li key={h.id}><a href={href('houses',h.id)}>Household senior of {h.name}</a></li>)}
+   {past.map(d=><li key={d.id} className="past"><a href={href('duties',d.id)}>Former: {d.name}</a><small>{[house(d.house)?.name,d.end&&`until ${d.end}`].filter(Boolean).join(' · ')}</small></li>)}
+  </ul>}
+ </div>;
 }
 
 export function ServiceRecord({member,data}:{member:RecordData;data:Dataset}){

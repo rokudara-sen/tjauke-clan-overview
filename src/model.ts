@@ -2,7 +2,8 @@ import definition from './schema.json';
 export type Kind = keyof typeof definition;
 export type RecordData = { id: string; archived: boolean; published: boolean; updated_at?: string; [key: string]: string | boolean | undefined };
 export type Dataset = Record<Kind, RecordData[]>;
-export type Field = {key: string; label: string; type: string; required?: boolean; ref?: Kind; options?: string[]};
+/** `term` is the clan's provisional Yautja word for a field; `legacy` is the workbook column heading when it differs from the label. */
+export type Field = {key: string; label: string; type: string; required?: boolean; ref?: Kind; options?: string[]; term?: string; legacy?: string};
 export const schemas = definition as Record<Kind, {title: string; sheet: string; prefix: string; added?: string; fields: Field[]}>;
 export const kinds = Object.keys(schemas) as Kind[];
 export const emptyData = (): Dataset => Object.fromEntries(kinds.map(k=>[k,[]])) as unknown as Dataset;
@@ -25,6 +26,7 @@ export function validate(kind: Kind, row: RecordData, data: Dataset): string[] {
   if(v&&f.ref&&!data[f.ref].some(r=>r.id===v))errors.push(`${f.label} refers to a missing record.`);
  }
  if(kind==='relations') {if(row.from===row.to)errors.push('Choose two different affiliations.');if(!row.archived&&data.relations.some(r=>r.id!==row.id&&!r.archived&&r.from===row.from&&r.to===row.to))errors.push('This directional assessment already exists.');}
+ if(kind==='members'&&!String(row.rank??'').trim()&&!String(row.standing??'').trim())errors.push('Record a warrior caste rank or a senior standing.');
  if(kind==='members'){let id=String(row.sponsor||'');const seen=new Set([row.id]);while(id){if(seen.has(id)){errors.push('Sponsor cycle detected.');break;}seen.add(id);id=String(data.members.find(r=>r.id===id)?.sponsor||'');}}
  if(kind==='hunts'&&row.hunter&&row.hunter===row.witness)errors.push('Hunter and witness must differ.');
  if(kind==='duties'&&row.start&&row.end&&row.end<row.start)errors.push('End date precedes start date.');
@@ -36,7 +38,10 @@ export function parseWorkbook(raw: Record<string, unknown[][]>): {data: Dataset;
  for(const k of kinds){const grid=raw[k];if(!grid){if(!schemas[k].added)issues.push(`Missing source table: ${k}`);continue;}const headers=grid[0].map(normalize);
   for(const cells of grid.slice(1).filter(r=>r.some(v=>v!=null&&v!==''))){const get=(h:string)=>cells[headers.indexOf(normalize(h))];const id=String(get('ID')||'');if(!id){issues.push(`${k}: missing legacy ID`);continue;}
    const row:RecordData={id,archived:normalize(get('Archived'))==='true',published:false};
-   for(const f of schemas[k].fields)row[f.key]=String(get(f.label)??'');
+   for(const f of schemas[k].fields)row[f.key]=String(get(f.label)??get(f.legacy??f.label)??'');
+   // The workbook keeps one seven-step rank; senior steps become standing.
+   if(k==='members'&&legacyStanding[String(row.rank)]){row.standing=legacyStanding[String(row.rank)];row.rank='';}
+   if(k==='promotions'&&row.rank==='Leader')row.rank='Clan Leader';
    row.created_at=String(get('Created at')||'');row.updated_at=String(get('Updated at')||'');
    data[k].push(row);
   }
@@ -46,7 +51,34 @@ export function parseWorkbook(raw: Record<string, unknown[][]>): {data: Dataset;
  return {data,issues};
 }
 
-export const elderRanks=['Elder','Leader','Ancient'];
+export const warriorRanks=['Unblooded','Young Blood','Blooded','Elite'];
+export const seniorStandings=['Elder','Clan Leader','Ancient'];
+const legacyStanding:Record<string,string>={Elder:'Elder',Leader:'Clan Leader',Ancient:'Ancient'};
+// Until the standing migration runs, the database still holds Elder, Leader and Ancient in the rank column.
+/** Warrior caste rank, or '' when none is recorded. */
+export const warriorRank=(m:RecordData|undefined)=>warriorRanks.includes(String(m?.rank))?String(m!.rank):'';
+/** Senior standing (Elder, Clan Leader, Ancient), or '' when the hunter holds none. */
+export const standingOf=(m:RecordData|undefined)=>seniorStandings.includes(String(m?.standing))?String(m!.standing):legacyStanding[String(m?.rank)]||'';
+/** What a roster shows: senior standing where held, otherwise warrior caste rank. */
+export const rankLabel=(m:RecordData|undefined)=>standingOf(m)||warriorRank(m);
+const promotedTo=(p:RecordData)=>p.rank==='Leader'?'Clan Leader':String(p.rank||'');
+/** Hunters who are not dead or departed, so still hold their standing. */
+const serving=(m:RecordData)=>!['Deceased','Departed'].includes(String(m.status));
+/** Clan Leader, Council of Ancients and Elders among serving hunters. */
+export function clanAuthority(data:Dataset){
+ const members=active(data.members).filter(serving).sort((a,b)=>String(a.name).localeCompare(String(b.name)));
+ const holding=(s:string)=>members.filter(m=>standingOf(m)===s);
+ return {leaders:holding('Clan Leader'),ancients:holding('Ancient'),elders:holding('Elder')};
+}
+/** Household-senior appointments are shown as household leadership, not alongside other duties. */
+export const isSeniorDuty=(d:RecordData)=>/^household senior\b/i.test(String(d.name||'').trim());
+export const currentDuty=(d:RecordData)=>['Active','Acting'].includes(String(d.status))&&!d.end;
+/** Recorded senior standing in date order, with the earlier standings a hunter no longer holds. */
+export function standingHistory(member:RecordData,data:Dataset){
+ const entries=active(data.promotions).filter(p=>p.member===member.id&&seniorStandings.includes(promotedTo(p))).sort((a,b)=>String(a.date||'~').localeCompare(String(b.date||'~')));
+ const now=standingOf(member);
+ return {entries,former:[...new Set(entries.map(promotedTo))].filter(s=>s!==now)};
+}
 
 export type ServiceEntry={kind:Kind;id:string;title:string;role:string;date:string;era:string;state:string};
 /** A hunter's undertakings, witnessed hunts, duties, history and promotions, ordered by real-world date. Undated entries follow in their own group. */
@@ -57,16 +89,16 @@ export function serviceRecord(memberId:string,data:Dataset):ServiceEntry[]{
   ...active(data.hunts).filter(h=>h.witness===memberId).map(h=>({kind:'hunts' as Kind,id:h.id,title:s(h.name),role:'Witness',date:s(h.date),era:s(h.era),state:[h.state,h.witness_status?`witness ${String(h.witness_status).toLowerCase()}`:''].filter(Boolean).join(', ')})),
   ...active(data.duties).filter(d=>d.member===memberId).map(d=>({kind:'duties' as Kind,id:d.id,title:s(d.name),role:'Duty',date:s(d.start),era:'',state:d.end?`${s(d.status)}, until ${s(d.end)}`:s(d.status)})),
   ...active(data.chronicle).filter(c=>c.member===memberId).map(c=>({kind:'chronicle' as Kind,id:c.id,title:s(c.name),role:'History',date:s(c.date),era:s(c.era),state:s(c.certainty)})),
-  ...active(data.promotions).filter(p=>p.member===memberId).map(p=>({kind:'promotions' as Kind,id:p.id,title:s(p.name),role:`Rank: ${s(p.rank)}`,date:s(p.date),era:s(p.era),state:''})),
+  ...active(data.promotions).filter(p=>p.member===memberId).map(p=>({kind:'promotions' as Kind,id:p.id,title:s(p.name),role:seniorStandings.includes(promotedTo(p))?`Standing: ${promotedTo(p)}`:`Advancement: ${s(p.rank)}`,date:s(p.date),era:s(p.era),state:''})),
  ];
  return entries.sort((a,b)=>(a.date?0:1)-(b.date?0:1)||a.date.localeCompare(b.date)||a.title.localeCompare(b.title));
 }
 
-/** Rank steps for a profile. Only promotions that were recorded carry a date or source. */
+/** Warrior caste steps for a profile. Only advancements that were recorded carry a date or source. Senior standing is not a step. */
 export function rankSteps(member:RecordData,data:Dataset){
- const ranks=schemas.members.fields.find(f=>f.key==='rank')!.options!;
+ const ranks=warriorRanks;
  const promotions=active(data.promotions).filter(p=>p.member===member.id);
- const current=ranks.indexOf(String(member.rank));
+ const current=ranks.indexOf(warriorRank(member));
  return ranks.map((rank,i)=>({rank,current:i===current,reached:current>=0&&i<=current,promotion:promotions.filter(p=>p.rank===rank).sort((a,b)=>String(a.date||'~').localeCompare(String(b.date||'~')))[0]}));
 }
 
@@ -79,7 +111,7 @@ export function asymmetries(data:Dataset){
 /** Every assessment for one direction, current first, then superseded ones newest first. */
 export const assessmentHistory=(data:Dataset,from:string,to:string)=>data.relations.filter(r=>r.from===from&&r.to===to).sort((a,b)=>Number(a.archived)-Number(b.archived)||String(b.assessed||'').localeCompare(String(a.assessed||'')));
 
-const searchFields=['epithet','meaning','quarry','summary','category','era','usage','trophy','mandate','kind','rank'];
+const searchFields=['epithet','meaning','quarry','summary','category','era','usage','trophy','mandate','kind','rank','standing','context'];
 export type SearchHit={kind:Kind;row:RecordData;match:string};
 /** Name matches rank first, then matches in short descriptive fields. Settings and relations are not searchable records. */
 export function searchArchive(query:string,data:Dataset,limit=30):SearchHit[]{

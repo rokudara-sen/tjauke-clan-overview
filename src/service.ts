@@ -15,7 +15,7 @@ export async function exportBackup(){if(!client)throw Error('Connect Supabase be
 export const missingTable=(e:{code?:string;message?:string})=>['42P01','PGRST205','42883','PGRST202'].includes(String(e.code))||/does not exist|could not find/i.test(String(e.message));
 export const pendingMigration='The database needs the latest updates in supabase/migrations (up to 202610030003_community.sql) before this works.';
 async function call<T>(fn:string,args?:Record<string,unknown>):Promise<T>{if(!client)throw Error('Connect Supabase first.');const {data,error}=await client.rpc(fn,args);if(error)throw missingTable(error)?Error(pendingMigration):error;return data as T;}
-export type Access={admin:boolean;username:string|null;status:'pending'|'approved'|'rejected'|'suspended';member:string|null;name:string|null;rank:string|null;elder:boolean;seniorOf:string[]};
+export type Access={admin:boolean;username:string|null;status:'pending'|'approved'|'rejected'|'suspended';member:string|null;name:string|null;rank:string|null;standing?:string|null;elder:boolean;seniorOf:string[]};
 export type Workspace={member:RecordData;houses:RecordData[];hunts:RecordData[];chronicle:RecordData[]};
 export const myAccess=()=>call<Access>('my_access');
 export const hunterWorkspace=()=>call<Workspace>('hunter_workspace');

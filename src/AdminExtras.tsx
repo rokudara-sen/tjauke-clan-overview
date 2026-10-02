@@ -16,7 +16,7 @@ export function WorkSummary({refreshKey,onGlossary}:{refreshKey:number;onGlossar
  const [q,setQ]=useState<Queue|null>(null);
  useEffect(()=>{const load=()=>myQueue().then(setQ).catch(()=>setQ(null));void load();window.addEventListener('queue-changed',load);return()=>window.removeEventListener('queue-changed',load);},[refreshKey]);
  if(!q)return null;
- const items=[[q.registrations,'registration','registrations','admin-accounts'],[q.portraits,'portrait','portraits','admin-portraits'],[q.reports,'reported message','reported messages','admin-reports'],[q.promotions,'promotion suggestion','promotion suggestions','admin-promotions'],[q.suggestions,'glossary suggestion','glossary suggestions','glossary']] as const;
+ const items=[[q.registrations,'registration','registrations','admin-accounts'],[q.portraits,'portrait','portraits','admin-portraits'],[q.reports,'reported message','reported messages','admin-reports'],[q.promotions,'advancement suggestion','advancement suggestions','admin-promotions'],[q.suggestions,'glossary suggestion','glossary suggestions','glossary']] as const;
  const waiting=items.filter(([n])=>n);
  return <div className="work-summary" role="status">{waiting.length?<><span>Waiting:</span>{waiting.map(([n,one,many,target])=><button key={target} className="text-button" onClick={()=>target==='glossary'?onGlossary():scrollTo(target)}>{plural(n!,one,many)}</button>)}</>:<span>Nothing is waiting for review.</span>}</div>;
 }
@@ -41,9 +41,9 @@ export function PromotionSuggestions({data,onRecord}:{data:Dataset;onRecord:(s:P
  const {busy,error,setError,message,run}=useAction(load);
  useEffect(()=>{load().catch(e=>setError((e as Error).message));},[load,data,setError]);
  const name=(id:string)=>data.members.find(m=>m.id===id)?.name||id;
- return <section className="panel accounts" id="admin-promotions"><h2>Promotion suggestions</h2><p className="section-note">Accepted claims with no rank history entry citing them. Recording a promotion does not change the hunter’s current rank; edit the hunter record for that.</p><Result error={error} message={message}/>
+ return <section className="panel accounts" id="admin-promotions"><h2>Advancement suggestions</h2><p className="section-note">Accepted blooding rites by hunters not yet Blooded, until an advancement cites them or they are dismissed. Personal and training hunts never suggest an advancement, and nothing suggests Elder, Clan Leader or Ancient standing. Recording an advancement does not change the hunter’s current rank; edit the hunter record for that.</p><Result error={error} message={message}/>
   {rows===null?!error&&<p role="status">Loading suggestions…</p>:rows.length?<ul className="record-list">{rows.map(s=><li key={s.hunt}><div><a className="record-title" href={href('hunts',s.hunt)}>{s.name}</a><small>{[name(s.hunter),s.date||s.era,s.trophy&&`trophy: ${s.trophy}`].filter(Boolean).join(' · ')}</small></div>
-   <div className="account-actions"><button className="primary" disabled={busy} onClick={()=>onRecord(s)}>Record promotion</button><button disabled={busy} onClick={()=>void run(()=>dismissPromotion(s.hunt),`${s.name} dismissed. It will not be suggested again.`)}>Not a promotion</button></div></li>)}</ul>:<p className="empty">No accepted claims are waiting.</p>}
+   <div className="account-actions"><button className="primary" disabled={busy} onClick={()=>onRecord(s)}>Record advancement</button><button disabled={busy} onClick={()=>void run(()=>dismissPromotion(s.hunt),`${s.name} dismissed. It will not be suggested again.`)}>Not an advancement</button></div></li>)}</ul>:<p className="empty">No accepted blooding rites are waiting.</p>}
  </section>;
 }
 

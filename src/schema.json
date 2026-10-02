@@ -113,34 +113,46 @@
       },
       {
         "key": "rank",
-        "label": "Rank",
+        "label": "Warrior caste rank",
         "type": "select",
         "options": [
           "Unblooded",
           "Young Blood",
           "Blooded",
-          "Elite",
+          "Elite"
+        ],
+        "legacy": "Rank"
+      },
+      {
+        "key": "standing",
+        "label": "Senior standing",
+        "type": "select",
+        "options": [
           "Elder",
-          "Leader",
+          "Clan Leader",
           "Ancient"
         ],
-        "required": true
+        "added": "202610040001"
       },
       {
         "key": "house",
-        "label": "Agaj’ya / household",
+        "label": "Household",
         "type": "ref",
-        "ref": "houses"
+        "ref": "houses",
+        "legacy": "Agaj’ya / household",
+        "term": "Agaj’ya"
       },
       {
         "key": "sponsor",
-        "label": "Nrak’ytara / sponsor",
+        "label": "Sponsor",
         "type": "ref",
-        "ref": "members"
+        "ref": "members",
+        "legacy": "Nrak’ytara / sponsor",
+        "term": "Nrak’ytara"
       },
       {
         "key": "status",
-        "label": "Standing",
+        "label": "Status",
         "type": "select",
         "options": [
           "Active",
@@ -149,7 +161,8 @@
           "Deceased",
           "Departed"
         ],
-        "required": true
+        "required": true,
+        "legacy": "Standing"
       },
       {
         "key": "joined",
@@ -191,9 +204,11 @@
     "fields": [
       {
         "key": "name",
-        "label": "Agaj’ya name",
+        "label": "Household name",
         "type": "text",
-        "required": true
+        "required": true,
+        "legacy": "Agaj’ya name",
+        "term": "Agaj’ya"
       },
       {
         "key": "meaning",
@@ -246,6 +261,17 @@
         "required": true
       },
       {
+        "key": "context",
+        "label": "Context",
+        "type": "select",
+        "options": [
+          "Personal hunt",
+          "Training hunt",
+          "Blooding rite"
+        ],
+        "added": "202610040001"
+      },
+      {
         "key": "hunter",
         "label": "Hunter",
         "type": "ref",
@@ -254,9 +280,11 @@
       },
       {
         "key": "witness",
-        "label": "Hult’ah / witness",
+        "label": "Witness",
         "type": "ref",
-        "ref": "members"
+        "ref": "members",
+        "legacy": "Hult’ah / witness",
+        "term": "Hult’ah"
       },
       {
         "key": "witness_status",
@@ -569,7 +597,7 @@
     ]
   },
   "promotions": {
-    "title": "Rank history",
+    "title": "Advancement and standing",
     "sheet": "",
     "prefix": "PRM",
     "added": "202610030001",
@@ -589,7 +617,7 @@
       },
       {
         "key": "rank",
-        "label": "Rank conferred",
+        "label": "Rank or standing conferred",
         "type": "select",
         "options": [
           "Unblooded",
@@ -597,7 +625,7 @@
           "Blooded",
           "Elite",
           "Elder",
-          "Leader",
+          "Clan Leader",
           "Ancient"
         ],
         "required": true
