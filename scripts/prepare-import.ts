@@ -1,0 +1,11 @@
+import fs from 'node:fs';
+import {parseWorkbook,kinds,validate,ordered} from '../src/model.ts';
+const path=process.argv[2]||'.local/workbook.json';
+const {data,issues}=parseWorkbook(JSON.parse(fs.readFileSync(path,'utf8')));
+for(const kind of kinds)for(const row of data[kind])issues.push(...validate(kind,row,data).map(issue=>`${kind}/${row.id}: ${issue}`));
+if(issues.length)throw Error(issues.join('\n'));
+fs.mkdirSync('.local',{recursive:true});
+fs.writeFileSync('.local/import.json',JSON.stringify(data,null,2));
+const literal=JSON.stringify(data).replaceAll("'","''");
+fs.writeFileSync('.local/import.sql',`-- Run as the database owner in Supabase SQL Editor after applying the schema.\n-- Uses the existing approved administrator identity; imports drafts only.\nbegin;\nselect set_config('request.jwt.claim.sub',(select user_id::text from private.administrators order by user_id limit 1),true);\nselect public.import_archive('${literal}'::jsonb);\ncommit;\n`);
+console.log(JSON.stringify({counts:Object.fromEntries(kinds.map(k=>[k,data[k].length])),documentOrder:ordered(data.library).map(r=>({id:r.id,order:r.order,url:r.url})),relations:data.relations.map(r=>({from:r.from,to:r.to,stance:r.stance})),issues},null,2));

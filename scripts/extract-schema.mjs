@@ -1,0 +1,13 @@
+import fs from 'node:fs';
+import vm from 'node:vm';
+const legacy=fs.readFileSync('reference/TjaukeClanArchive.gs','utf8');
+const ctx=vm.createContext({});
+vm.runInContext(legacy.slice(0,legacy.indexOf('function onOpen()'))+';globalThis.schemas=tkSchemas_();',ctx);
+const schemas=JSON.parse(JSON.stringify(ctx.schemas));
+schemas.hunts.fields.find(f=>f.key==='state').options.splice(2,0,'Underway');
+schemas.library.fields=schemas.library.fields.filter(f=>f.key!=='body');
+schemas.library.fields.find(f=>f.key==='category').type='text';
+delete schemas.library.fields.find(f=>f.key==='category').options;
+const titles={members:'Hunters',houses:'Households',hunts:'Undertakings',chronicle:'History',library:'Documents',clans:'Affiliations',settings:'Settings'};
+for(const [k,v] of Object.entries(schemas)) v.title=titles[k]||v.title;
+fs.writeFileSync('src/schema.json',JSON.stringify(schemas,null,2));

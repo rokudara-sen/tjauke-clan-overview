@@ -1,0 +1,548 @@
+{
+  "clans": {
+    "title": "Affiliations",
+    "sheet": "Affiliations",
+    "prefix": "CLN",
+    "fields": [
+      {
+        "key": "name",
+        "label": "Affiliation name",
+        "type": "text",
+        "required": true
+      },
+      {
+        "key": "kind",
+        "label": "Affiliation type",
+        "type": "select",
+        "options": [
+          "Yautja clan",
+          "Outsider faction"
+        ],
+        "required": true
+      },
+      {
+        "key": "notes",
+        "label": "Background / contact notes",
+        "type": "textarea"
+      },
+      {
+        "key": "source",
+        "label": "Reference URL",
+        "type": "url"
+      }
+    ]
+  },
+  "relations": {
+    "title": "Relations",
+    "sheet": "Relations",
+    "prefix": "REL",
+    "fields": [
+      {
+        "key": "name",
+        "label": "Assessment title",
+        "type": "text",
+        "required": true
+      },
+      {
+        "key": "from",
+        "label": "From affiliation",
+        "type": "ref",
+        "ref": "clans",
+        "required": true
+      },
+      {
+        "key": "to",
+        "label": "Toward affiliation",
+        "type": "ref",
+        "ref": "clans",
+        "required": true
+      },
+      {
+        "key": "stance",
+        "label": "Stance",
+        "type": "select",
+        "options": [
+          "Unknown",
+          "Allied",
+          "Friendly",
+          "Neutral",
+          "Rival",
+          "Hostile",
+          "War"
+        ],
+        "required": true
+      },
+      {
+        "key": "notes",
+        "label": "Reasons / agreements / context",
+        "type": "textarea"
+      },
+      {
+        "key": "source",
+        "label": "Source URL",
+        "type": "url"
+      }
+    ]
+  },
+  "members": {
+    "title": "Hunters",
+    "sheet": "Members",
+    "prefix": "MEM",
+    "fields": [
+      {
+        "key": "name",
+        "label": "Yautja name",
+        "type": "text",
+        "required": true
+      },
+      {
+        "key": "epithet",
+        "label": "Epithet / interpretation",
+        "type": "text"
+      },
+      {
+        "key": "player",
+        "label": "Player / Discord",
+        "type": "text"
+      },
+      {
+        "key": "rank",
+        "label": "Rank",
+        "type": "select",
+        "options": [
+          "Unblooded",
+          "Young Blood",
+          "Blooded",
+          "Elite",
+          "Elder",
+          "Leader",
+          "Ancient"
+        ],
+        "required": true
+      },
+      {
+        "key": "house",
+        "label": "Agaj’ya / household",
+        "type": "ref",
+        "ref": "houses"
+      },
+      {
+        "key": "sponsor",
+        "label": "Nrak’ytara / sponsor",
+        "type": "ref",
+        "ref": "members"
+      },
+      {
+        "key": "status",
+        "label": "Standing",
+        "type": "select",
+        "options": [
+          "Active",
+          "On leave",
+          "Missing",
+          "Deceased",
+          "Departed"
+        ],
+        "required": true
+      },
+      {
+        "key": "joined",
+        "label": "Joined",
+        "type": "date"
+      },
+      {
+        "key": "biography",
+        "label": "Life and character",
+        "type": "textarea"
+      },
+      {
+        "key": "appearance",
+        "label": "Appearance and equipment",
+        "type": "textarea"
+      },
+      {
+        "key": "hooks",
+        "label": "Unfinished business / RP hooks",
+        "type": "textarea"
+      },
+      {
+        "key": "source",
+        "label": "Profile / reference URL",
+        "type": "url"
+      }
+    ]
+  },
+  "houses": {
+    "title": "Households",
+    "sheet": "Households",
+    "prefix": "HSE",
+    "fields": [
+      {
+        "key": "name",
+        "label": "Agaj’ya name",
+        "type": "text",
+        "required": true
+      },
+      {
+        "key": "meaning",
+        "label": "Estimated meaning",
+        "type": "text"
+      },
+      {
+        "key": "senior",
+        "label": "Household senior",
+        "type": "ref",
+        "ref": "members"
+      },
+      {
+        "key": "vessel",
+        "label": "Vessel / holding",
+        "type": "text"
+      },
+      {
+        "key": "status",
+        "label": "Condition",
+        "type": "select",
+        "options": [
+          "Active",
+          "Dispersed",
+          "Dissolved"
+        ],
+        "required": true
+      },
+      {
+        "key": "history",
+        "label": "History and obligations",
+        "type": "textarea"
+      },
+      {
+        "key": "identity",
+        "label": "Customs / material identity",
+        "type": "textarea"
+      }
+    ]
+  },
+  "hunts": {
+    "title": "Undertakings",
+    "sheet": "Hunts",
+    "prefix": "HNT",
+    "fields": [
+      {
+        "key": "name",
+        "label": "Account title",
+        "type": "text",
+        "required": true
+      },
+      {
+        "key": "hunter",
+        "label": "Hunter",
+        "type": "ref",
+        "ref": "members",
+        "required": true
+      },
+      {
+        "key": "witness",
+        "label": "Hult’ah / witness",
+        "type": "ref",
+        "ref": "members"
+      },
+      {
+        "key": "date",
+        "label": "Real-world session date",
+        "type": "date"
+      },
+      {
+        "key": "era",
+        "label": "In-character date / expedition",
+        "type": "text"
+      },
+      {
+        "key": "quarry",
+        "label": "Identified quarry",
+        "type": "textarea",
+        "required": true
+      },
+      {
+        "key": "weapon",
+        "label": "Declared weapons",
+        "type": "textarea",
+        "required": true
+      },
+      {
+        "key": "limits",
+        "label": "Additional restrictions",
+        "type": "textarea"
+      },
+      {
+        "key": "state",
+        "label": "Undertaking",
+        "type": "select",
+        "options": [
+          "Planned",
+          "Declared",
+          "Underway",
+          "Completed",
+          "Withdrawn",
+          "Invalidated"
+        ],
+        "required": true
+      },
+      {
+        "key": "outside",
+        "label": "Outside contribution",
+        "type": "select",
+        "options": [
+          "Unknown",
+          "No",
+          "Yes"
+        ],
+        "required": true
+      },
+      {
+        "key": "review",
+        "label": "Claim judgment",
+        "type": "select",
+        "options": [
+          "Pending",
+          "Accepted",
+          "Rejected"
+        ],
+        "required": true
+      },
+      {
+        "key": "trophy",
+        "label": "Claimed trophy",
+        "type": "text"
+      },
+      {
+        "key": "account",
+        "label": "Returned account",
+        "type": "textarea"
+      },
+      {
+        "key": "judgment",
+        "label": "Judgment / grounds",
+        "type": "textarea"
+      },
+      {
+        "key": "source",
+        "label": "Evidence URL",
+        "type": "url"
+      }
+    ]
+  },
+  "chronicle": {
+    "title": "History",
+    "sheet": "History",
+    "prefix": "HIS",
+    "fields": [
+      {
+        "key": "name",
+        "label": "Entry title",
+        "type": "text",
+        "required": true
+      },
+      {
+        "key": "era",
+        "label": "In-character date / era",
+        "type": "text"
+      },
+      {
+        "key": "order",
+        "label": "Reading order",
+        "type": "number",
+        "required": true
+      },
+      {
+        "key": "date",
+        "label": "Recorded date",
+        "type": "date"
+      },
+      {
+        "key": "category",
+        "label": "Category",
+        "type": "select",
+        "options": [
+          "Origins",
+          "Expedition",
+          "Succession",
+          "Judgment",
+          "Loss",
+          "Treaty",
+          "Personal account",
+          "Other"
+        ],
+        "required": true
+      },
+      {
+        "key": "member",
+        "label": "Related hunter",
+        "type": "ref",
+        "ref": "members"
+      },
+      {
+        "key": "house",
+        "label": "Related household",
+        "type": "ref",
+        "ref": "houses"
+      },
+      {
+        "key": "hunt",
+        "label": "Related hunt",
+        "type": "ref",
+        "ref": "hunts"
+      },
+      {
+        "key": "certainty",
+        "label": "Evidence",
+        "type": "select",
+        "options": [
+          "Recorded",
+          "Corroborated",
+          "Reconstructed",
+          "Disputed",
+          "Oral tradition"
+        ],
+        "required": true
+      },
+      {
+        "key": "summary",
+        "label": "Opening summary",
+        "type": "textarea"
+      },
+      {
+        "key": "body",
+        "label": "Full account",
+        "type": "textarea",
+        "required": true
+      },
+      {
+        "key": "source",
+        "label": "Source URL",
+        "type": "url"
+      }
+    ]
+  },
+  "duties": {
+    "title": "Duties",
+    "sheet": "Duties",
+    "prefix": "DUT",
+    "fields": [
+      {
+        "key": "name",
+        "label": "Duty / office",
+        "type": "text",
+        "required": true
+      },
+      {
+        "key": "member",
+        "label": "Holder",
+        "type": "ref",
+        "ref": "members",
+        "required": true
+      },
+      {
+        "key": "house",
+        "label": "Scope / household",
+        "type": "ref",
+        "ref": "houses"
+      },
+      {
+        "key": "start",
+        "label": "From",
+        "type": "date"
+      },
+      {
+        "key": "end",
+        "label": "Until",
+        "type": "date"
+      },
+      {
+        "key": "status",
+        "label": "Appointment",
+        "type": "select",
+        "options": [
+          "Active",
+          "Acting",
+          "Ended"
+        ],
+        "required": true
+      },
+      {
+        "key": "mandate",
+        "label": "Mandate and limits",
+        "type": "textarea",
+        "required": true
+      }
+    ]
+  },
+  "library": {
+    "title": "Documents",
+    "sheet": "Library",
+    "prefix": "DOC",
+    "fields": [
+      {
+        "key": "name",
+        "label": "Document / chapter",
+        "type": "text",
+        "required": true
+      },
+      {
+        "key": "category",
+        "label": "Shelf",
+        "type": "text",
+        "required": true
+      },
+      {
+        "key": "order",
+        "label": "Reading order",
+        "type": "number",
+        "required": true
+      },
+      {
+        "key": "summary",
+        "label": "Abstract",
+        "type": "textarea"
+      },
+      {
+        "key": "url",
+        "label": "Document URL",
+        "type": "url",
+        "required": true
+      }
+    ]
+  },
+  "settings": {
+    "title": "Settings",
+    "sheet": "Settings",
+    "prefix": "CFG",
+    "fields": [
+      {
+        "key": "name",
+        "label": "Clan name",
+        "type": "text",
+        "required": true
+      },
+      {
+        "key": "subtitle",
+        "label": "Subtitle",
+        "type": "text"
+      },
+      {
+        "key": "welcome",
+        "label": "Archive introduction",
+        "type": "textarea"
+      },
+      {
+        "key": "dossierUrl",
+        "label": "Published Weyland-Yutani dossier URL",
+        "type": "url"
+      },
+      {
+        "key": "rulesUrl",
+        "label": "CMU / honour code URL",
+        "type": "url"
+      }
+    ]
+  }
+}
