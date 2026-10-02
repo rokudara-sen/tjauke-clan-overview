@@ -54,7 +54,7 @@ export function serviceRecord(memberId:string,data:Dataset):ServiceEntry[]{
  const s=(v:unknown)=>v==null?'':String(v);
  const entries:ServiceEntry[]=[
   ...active(data.hunts).filter(h=>h.hunter===memberId).map(h=>({kind:'hunts' as Kind,id:h.id,title:s(h.name),role:'Undertaking',date:s(h.date),era:s(h.era),state:[h.state,h.state==='Completed'&&h.review?`claim ${String(h.review).toLowerCase()}`:''].filter(Boolean).join(', ')})),
-  ...active(data.hunts).filter(h=>h.witness===memberId).map(h=>({kind:'hunts' as Kind,id:h.id,title:s(h.name),role:'Witness',date:s(h.date),era:s(h.era),state:s(h.state)})),
+  ...active(data.hunts).filter(h=>h.witness===memberId).map(h=>({kind:'hunts' as Kind,id:h.id,title:s(h.name),role:'Witness',date:s(h.date),era:s(h.era),state:[h.state,h.witness_status?`witness ${String(h.witness_status).toLowerCase()}`:''].filter(Boolean).join(', ')})),
   ...active(data.duties).filter(d=>d.member===memberId).map(d=>({kind:'duties' as Kind,id:d.id,title:s(d.name),role:'Duty',date:s(d.start),era:'',state:d.end?`${s(d.status)}, until ${s(d.end)}`:s(d.status)})),
   ...active(data.chronicle).filter(c=>c.member===memberId).map(c=>({kind:'chronicle' as Kind,id:c.id,title:s(c.name),role:'History',date:s(c.date),era:s(c.era),state:s(c.certainty)})),
   ...active(data.promotions).filter(p=>p.member===memberId).map(p=>({kind:'promotions' as Kind,id:p.id,title:s(p.name),role:`Rank: ${s(p.rank)}`,date:s(p.date),era:s(p.era),state:''})),
@@ -93,3 +93,6 @@ export function searchArchive(query:string,data:Dataset,limit=30):SearchHit[]{
  }
  return hits.sort((a,b)=>a.score-b.score||String(a.hit.row.name).localeCompare(String(b.hit.row.name))).slice(0,limit).map(h=>h.hit);
 }
+
+/** Trophies whose claim was judged Accepted. Completed hunts with a pending or rejected claim are not trophies. */
+export const acceptedTrophies=(data:Dataset,filter:(hunt:RecordData)=>boolean=()=>true)=>active(data.hunts).filter(h=>h.review==='Accepted'&&String(h.trophy||'').trim()&&filter(h)).sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))||String(a.name).localeCompare(String(b.name)));

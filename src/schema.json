@@ -175,6 +175,12 @@
         "key": "source",
         "label": "Profile / reference URL",
         "type": "url"
+      },
+      {
+        "key": "portrait",
+        "label": "Portrait URL",
+        "type": "url",
+        "added": "202610030003"
       }
     ]
   },
@@ -251,6 +257,17 @@
         "label": "Hult’ah / witness",
         "type": "ref",
         "ref": "members"
+      },
+      {
+        "key": "witness_status",
+        "label": "Witness confirmation",
+        "type": "select",
+        "options": [
+          "Requested",
+          "Confirmed",
+          "Declined"
+        ],
+        "added": "202610030003"
       },
       {
         "key": "date",

@@ -1,5 +1,5 @@
 import { describe,it,expect } from 'vitest';
-import { assessmentHistory,asymmetries,emptyData,parseWorkbook,rankSteps,searchArchive,serviceRecord,validate,withAllKinds,type RecordData } from '../src/model';
+import { acceptedTrophies,assessmentHistory,asymmetries,emptyData,parseWorkbook,rankSteps,searchArchive,serviceRecord,validate,withAllKinds,type RecordData } from '../src/model';
 const row=(id:string,extra:Partial<RecordData>={}):RecordData=>({id,name:id,archived:false,published:true,...extra});
 
 describe('service record',()=>{
@@ -50,4 +50,7 @@ describe('later migrations',()=>{
 });
 describe('search noise',()=>{
  it('does not match the middle of words outside names',()=>{const d=emptyData();d.chronicle=[row('c',{name:'The boarding',summary:'The ship was attacked.'})];expect(searchArchive('ke',d)).toEqual([]);expect(searchArchive('attack',d).map(h=>h.row.id)).toEqual(['c']);expect(searchArchive('ship was',d).map(h=>h.row.id)).toEqual(['c']);});
+});
+describe('trophies',()=>{
+ it('lists only accepted claims with a trophy, newest first',()=>{const d=emptyData();d.hunts=[row('a',{review:'Accepted',trophy:'Skull',date:'2026-01-01'}),row('b',{review:'Accepted',trophy:'Spine',date:'2026-05-01'}),row('c',{review:'Pending',trophy:'Claimed',state:'Completed'}),row('d',{review:'Rejected',trophy:'Fake'}),row('e',{review:'Accepted',trophy:'  '}),row('f',{review:'Accepted',trophy:'Old',archived:true})];expect(acceptedTrophies(d).map(h=>h.id)).toEqual(['b','a']);expect(acceptedTrophies(d,h=>h.id==='a').map(h=>h.id)).toEqual(['a']);});
 });

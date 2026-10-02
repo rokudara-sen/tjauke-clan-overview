@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from 'react';
-import { claimUsername, client, hunterSave, hunterWorkspace, myAccess, usernamePattern, type Access, type Workspace } from './service';
+import { claimUsername, client, hunterSave, hunterWorkspace, myAccess, queueChanged, usernamePattern, type Access, type Workspace } from './service';
+import { DeleteAccount, Group, PortraitUpload, SuggestTerm, WitnessRequests } from './AccountExtras';
 import { schemas, validate, type Dataset, type Kind, type RecordData } from './model';
 import { FieldInput } from './Fields';
 import { href } from './Visuals';
@@ -31,21 +32,24 @@ export function Account({data,onChanged}:{data:Dataset;onChanged:()=>void}){
   // Fields this hunter cannot edit are not theirs to fix, so only report on the fields shown.
   const hidden=schemas[kind].fields.filter(f=>!modes[mode].fields.includes(f.key)).map(f=>f.label);
   const errors=validate(kind,row,known).filter(e=>!hidden.some(l=>e.startsWith(`${l} `)));if(!reason.trim())errors.push('A change note is required.');if(errors.length){setError(errors.join('\n'));return;}
-  setBusy(true);setError('');try{await hunterSave(kind,row,reason);setEditing(null);setMessage(mode==='declare'?'Declaration sent. It stays private until a judge publishes it.':mode==='history'?'History draft saved.':'Saved.');onChanged();setWorkspace(await hunterWorkspace());}catch(e){setError((e as Error).message);}finally{setBusy(false);}
+  setBusy(true);setError('');try{await hunterSave(kind,row,reason);setEditing(null);queueChanged();setMessage(mode==='declare'?'Declaration sent. It stays private until a judge publishes it.':mode==='history'?'History draft saved.':'Saved.');onChanged();setWorkspace(await hunterWorkspace());}catch(e){setError((e as Error).message);}finally{setBusy(false);}
  }
  if(!client)return <section className="panel setup"><h2>Accounts are not available in this preview</h2><p>Hunter sign-in needs the connected Supabase project.</p></section>;
  const alerts=<>{error&&<p className="notice error prose" role="alert">{error}</p>}{message&&<p className="notice" role="status">{message}</p>}</>;
  if(state==='checking')return <p role="status">Checking your account…</p>;
- if(state==='signed-out')return <>{alerts}<form className="panel login" onSubmit={signIn}><h2>Sign in</h2><p>No account yet? <a href={href('register')}>Request one</a>. An administrator approves new accounts.</p><label>Email<input type="email" autoComplete="username" required value={email} onChange={e=>setEmail(e.target.value)}/></label><label>Password<input type="password" autoComplete="current-password" required value={password} onChange={e=>setPassword(e.target.value)}/></label><button className="primary" disabled={busy}>{busy?'Signing in…':'Sign in'}</button></form></>;
+ if(state==='signed-out')return <>{alerts}<form className="panel login" onSubmit={signIn}><h2>Sign in</h2><p>No account yet? <a href={href('register')}>Request one</a>. An administrator approves new accounts.</p><label>Email<input type="email" autoComplete="username" required value={email} onChange={e=>setEmail(e.target.value)}/></label><label>Password<input type="password" autoComplete="current-password" required value={password} onChange={e=>setPassword(e.target.value)}/></label><div className="form-actions"><button className="primary" disabled={busy}>{busy?'Signing in…':'Sign in'}</button><a className="quiet-link" href={href('reset')}>Forgot your password?</a></div></form></>;
+ const extras=<div className="account-extras">{access?.status==='approved'&&<SuggestTerm/>}<PasswordForm/><DeleteAccount username={access?.username||null} admin={!!access?.admin}/></div>;
  const header=<div className="account-bar"><p>{access?.username?<>Signed in as <strong>{access.username}</strong></>:'Signed in'}{access?.member&&<>, linked to <a href={href('members',access.member)}>{access.name}</a> ({access.rank})</>}.</p><div className="form-actions">{access?.admin&&<a className="button-link" href={href('admin')}>Administration</a>}{access?.status==='approved'&&<a className="button-link" href={href('forum')}>Forum</a>}<button disabled={busy} onClick={()=>void client!.auth.signOut()}>Sign out</button></div></div>;
  if(state==='failed')return <>{header}{alerts}<button onClick={()=>void load()}>Try again</button></>;
- if(access&&access.status!=='approved'&&!access.admin)return <>{header}{alerts}<section className="panel" role="status"><h2>{access.status==='pending'?'Waiting for approval':access.status==='rejected'?'Registration not approved':'Account suspended'}</h2><p>{access.status==='pending'?'An administrator reviews new accounts. Your request is saved, so you can close this page and check back later.':access.status==='rejected'?'An administrator declined this registration. Contact the clan administrators if you think this is a mistake.':'An administrator suspended this account. Contact the clan administrators if you think this is a mistake.'}</p></section></>;
+ if(access&&access.status!=='approved'&&!access.admin)return <>{header}{alerts}<section className="panel" role="status"><h2>{access.status==='pending'?'Waiting for approval':access.status==='rejected'?'Registration not approved':'Account suspended'}</h2><p>{access.status==='pending'?'An administrator reviews new accounts. Your request is saved, so you can close this page and check back later.':access.status==='rejected'?'An administrator declined this registration. Contact the clan administrators if you think this is a mistake.':'An administrator suspended this account. Contact the clan administrators if you think this is a mistake.'}</p></section>{extras}</>;
  if(access&&!access.username)return <>{header}{alerts}<ClaimUsername onDone={()=>void load()}/></>;
- if(!access?.member||!workspace)return <>{header}{alerts}<section className="panel"><h2>No hunter record linked</h2><p>{access?.admin?'Administrators work from the administration page. To also act as a hunter, link this account to a hunter record there.':'You can use the forum. To edit records, an administrator needs to link this account to your hunter record.'}</p></section><PasswordForm/></>;
+ if(!access?.member||!workspace)return <>{header}{alerts}<section className="panel"><h2>No hunter record linked</h2><p>{access?.admin?'Administrators work from the administration page. To also act as a hunter, link this account to a hunter record there.':'You can use the forum. To edit records, an administrator needs to link this account to your hunter record.'}</p></section>{extras}</>;
  const me=workspace.member,judging=workspace.hunts.filter(h=>h.hunter!==me.id),mine=workspace.hunts.filter(h=>h.hunter===me.id);
  const judge=access.elder||access.seniorOf.length>0;
  return <>{header}{alerts}<div className="admin-grid account-grid"><div>
+  <WitnessRequests onChanged={onChanged}/>
   <Group title="Your record"><ul className="record-list"><li><div><a className="record-title" href={href('members',me.id)}>{me.name}</a><small>{[me.rank,data.houses.find(h=>h.id===me.house)?.name,me.status].filter(Boolean).join(' · ')}</small></div><button disabled={busy} onClick={()=>edit('profile',me)}>Edit profile</button></li></ul></Group>
+  <PortraitUpload member={me.id} current={data.members.find(m=>m.id===me.id)?.portrait??me.portrait}/>
   {workspace.houses.length>0&&<Group title="Your household"><ul className="record-list">{workspace.houses.map(h=><li key={h.id}><div><a className="record-title" href={href('houses',h.id)}>{h.name}</a><small>Household senior</small></div><button disabled={busy} onClick={()=>edit('house',h)}>Edit household</button></li>)}</ul></Group>}
   <Group title="Your undertakings" action={<button disabled={busy} onClick={()=>edit('declare',{id:newId('hunts'),archived:false,published:false,hunter:me.id,state:'Declared',outside:'Unknown',review:'Pending'})}>Declare an undertaking</button>}>
    {mine.length?<ul className="record-list">{mine.map(h=><li key={h.id}><div><span className="record-title">{h.name}</span><small>{[h.state,h.review==='Pending'?'awaiting judgment':`claim ${String(h.review).toLowerCase()}`,h.published?'published':'not published'].join(' · ')}</small></div>{h.review==='Pending'?<button disabled={busy} onClick={()=>edit('report',h)}>Update</button>:h.published?<a href={href('hunts',h.id)}>View</a>:null}</li>)}</ul>:<p className="empty">You have not declared any undertakings.</p>}
@@ -62,10 +66,9 @@ export function Account({data,onChanged}:{data:Dataset;onChanged:()=>void}){
   {access.elder&&<li>Add history entries as drafts, and publish drafts written by others.</li>}
   <li className="muted">Rank, standing, household, sponsor, duties and politics are set by administrators.</li>
  </ul></section>}
- </div><PasswordForm/></>;
+ </div>{extras}</>;
 }
 
-function Group({title,action,children}:{title:string;action?:ReactNode;children:ReactNode}){return <section className="section"><div className="section-heading"><h2>{title}</h2>{action}</div>{children}</section>;}
 
 function Editor({editing:{mode,row},setRow,data,reason,setReason,busy,onSave,onCancel}:{editing:{mode:Mode;row:RecordData};setRow:(r:RecordData)=>void;data:Dataset;reason:string;setReason:(v:string)=>void;busy:boolean;onSave:(e:FormEvent)=>void;onCancel:()=>void}){
  const m=modes[mode],fields=schemas[m.kind].fields.filter(f=>m.fields.includes(f.key));

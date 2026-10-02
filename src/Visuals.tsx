@@ -66,3 +66,9 @@ export function ServiceRecord({member,data}:{member:RecordData;data:Dataset}){
   <div><a href={href(e.kind,e.id)}>{e.title}</a><small>{[e.role,e.era,e.state].filter(Boolean).join(' · ')}</small></div>
  </li>])}</ol>;
 }
+
+export function TrophyList({rows,data,hunter=true}:{rows:RecordData[];data:Dataset;hunter?:boolean}){
+ if(!rows.length)return <p className="empty">No accepted trophies recorded.</p>;
+ return <ul className="trophies">{rows.map(h=>{const m=data.members.find(m=>m.id===h.hunter),house=data.houses.find(x=>x.id===m?.house);
+  return <li key={h.id}><span className="trophy">{h.trophy}</span><small>{hunter&&m&&<><a href={href('members',m.id)}>{m.name}</a>{house&&<> of {house.name}</>} · </>}<a href={href('hunts',h.id)}>{h.name}</a>{(h.date||h.era)&&<> · {String(h.date||h.era)}</>}</small></li>;})}</ul>;
+}
