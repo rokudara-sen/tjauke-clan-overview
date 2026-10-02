@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { client, exportBackup, linkAccount, listAccounts, loadData, saveRecord, supersedeRelation, unlinkAccount } from './service';
+import { client, exportBackup, forumConfigure, forumThreads, listAccounts, loadData, reviewAccount, saveRecord, supersedeRelation, type AccountRow } from './service';
 import { active, emptyData, kinds, schemas, validate, type Dataset, type Kind, type RecordData } from './model';
 import { FieldInput } from './Fields';
 const newId=(kind:Kind)=>`${schemas[kind].prefix}-${crypto.randomUUID()}`;
@@ -22,19 +22,39 @@ export function Admin({onChanged}:{onChanged:()=>void}){
    {kind==='relations'&&existing&&!row.archived&&!replacing&&<p><button type="button" disabled={busy} onClick={()=>open({id:newId('relations'),archived:false,published:row.published,name:'',from:row.from,to:row.to,stance:'',assessed:new Date().toISOString().slice(0,10)},data.relations.find(r=>r.id===row.id)!)}>Record a new assessment</button> <small>Use this when the stance changes, so the old one is kept.</small></p>}
    <fieldset disabled={busy}>{schemas[kind].fields.map(f=><FieldInput key={f.key} field={f} row={row} setRow={setRow} data={data}/>)}{kind==='members'&&<label className="checkbox"><input type="checkbox" checked={row.player_public===true} onChange={e=>setRow({...row,player_public:e.target.checked})}/>Publish this player handle</label>}<label className="checkbox"><input type="checkbox" checked={row.published} onChange={e=>setRow({...row,published:e.target.checked})}/>Published</label>{!replacing&&<label className="checkbox"><input type="checkbox" checked={row.archived} onChange={e=>setRow({...row,archived:e.target.checked})}/>Archived (retains relationships)</label>}<label>Change reason *<textarea rows={2} required value={reason} onChange={e=>setReason(e.target.value)}/></label><div className="form-actions"><button className="primary" type="submit">{busy?'Saving…':replacing?'Save new assessment':'Save record'}</button><button type="button" onClick={()=>open(null)}>Cancel</button></div></fieldset></form>
   :<section className="panel"><p>Select a record to edit, or add a new record.</p></section>}</div>
-  <HunterAccounts members={data.members}/>
+  <Accounts members={data.members}/>
+  <ForumSettings/>
  </>}</>;
 }
-function HunterAccounts({members}:{members:RecordData[]}){
- const [accounts,setAccounts]=useState<{email:string;member:string}[]|null>(null),[error,setError]=useState(''),[message,setMessage]=useState(''),[busy,setBusy]=useState(false),[email,setEmail]=useState(''),[member,setMember]=useState('');
- const refresh=async()=>{try{setAccounts(await listAccounts());}catch(e){setError((e as Error).message);}};
+const statusLabel={pending:'Waiting for approval',approved:'Approved',rejected:'Rejected',suspended:'Suspended'};
+/** Account approval and hunter links. Accounts are shown by username; emails are never loaded. */
+function Accounts({members}:{members:RecordData[]}){
+ const [accounts,setAccounts]=useState<AccountRow[]|null>(null),[error,setError]=useState(''),[message,setMessage]=useState(''),[busy,setBusy]=useState(false),[links,setLinks]=useState<Record<string,string>>({});
+ const refresh=async()=>{try{const rows=await listAccounts();setAccounts(rows);setLinks(Object.fromEntries(rows.map(r=>[r.id,r.member||r.requested||''])));}catch(e){setError((e as Error).message);}};
  useEffect(()=>{void refresh();},[]);
- async function run(action:()=>Promise<void>,done:string){if(busy)return false;setBusy(true);setError('');setMessage('');try{await action();setMessage(done);await refresh();return true;}catch(e){setError((e as Error).message);return false;}finally{setBusy(false);}}
- const name=(id:string)=>members.find(m=>m.id===id)?.name||id;
- return <section className="panel accounts"><h2>Hunter accounts</h2>
-  <p className="section-note">Linked accounts can edit their own profile prose and declare undertakings. Household seniors and Elder rank and above also judge undertakings. Create the account under Authentication, Users in Supabase with a password, then link it here.</p>
+ const name=(id:string|null)=>id?members.find(m=>m.id===id)?.name||id:null;
+ const label=(a:AccountRow)=>a.username||`Account without username (registered ${a.created_at.slice(0,10)})`;
+ async function decide(a:AccountRow,decision:'approved'|'rejected'|'suspended',done:string){if(busy)return;setBusy(true);setError('');setMessage('');try{await reviewAccount(a.id,decision,decision==='approved'?links[a.id]||null:null);setMessage(done);await refresh();}catch(e){setError((e as Error).message);}finally{setBusy(false);}}
+ const hunterSelect=(a:AccountRow)=><label className="inline-select">Hunter<select value={links[a.id]||''} onChange={e=>setLinks({...links,[a.id]:e.target.value})}><option value="">Not linked</option>{active(members).map(m=><option key={m.id} value={m.id}>{m.name}</option>)}</select></label>;
+ const pending=accounts?.filter(a=>a.status==='pending')||[],approved=accounts?.filter(a=>a.status==='approved')||[],closed=accounts?.filter(a=>a.status==='rejected'||a.status==='suspended')||[];
+ return <section className="panel accounts"><h2>Accounts</h2>
+  <p className="section-note">New registrations wait here. A linked hunter can edit their own profile and declare undertakings; household seniors and Elder rank and above also judge undertakings. Emails are not shown here.</p>
   {error&&<p className="notice error prose" role="alert">{error}</p>}{message&&<p className="notice" role="status">{message}</p>}
-  {accounts===null?!error&&<p role="status">Loading accounts…</p>:accounts.length?<ul className="record-list">{accounts.map(a=><li key={a.email}><div><span className="record-title">{a.email}</span><small>{name(a.member)}</small></div><button disabled={busy} onClick={()=>void run(()=>unlinkAccount(a.email),`${a.email} is no longer linked.`)}>Unlink {name(a.member)}</button></li>)}</ul>:<p className="empty">No accounts linked.</p>}
-  <form className="link-account" onSubmit={e=>{e.preventDefault();void run(()=>linkAccount(email,member),`${email} is linked to ${name(member)}.`).then(ok=>{if(ok)setEmail('');});}}><fieldset disabled={busy}><label>Account email<input type="email" required value={email} onChange={e=>setEmail(e.target.value)}/></label><label>Hunter<select required value={member} onChange={e=>setMember(e.target.value)}><option value="">Select…</option>{active(members).map(m=><option key={m.id} value={m.id}>{m.name}</option>)}</select></label><button className="primary">{busy?'Linking…':'Link account'}</button></fieldset></form>
+  {accounts===null?!error&&<p role="status">Loading accounts…</p>:<fieldset disabled={busy} className="account-groups">
+   <h3>Waiting for approval ({pending.length})</h3>
+   {pending.length?<ul className="record-list">{pending.map(a=><li key={a.id}><div><span className="record-title">{label(a)}</span><small>Registered {a.created_at.slice(0,10)}{a.requested&&<> · says they play {name(a.requested)}</>}</small>{a.note&&<p className="prose">{a.note}</p>}</div><div className="account-actions">{hunterSelect(a)}<button className="primary" onClick={()=>void decide(a,'approved',`${label(a)} approved.`)}>Approve</button><button onClick={()=>void decide(a,'rejected',`${label(a)} rejected.`)}>Reject</button></div></li>)}</ul>:<p className="empty">No registrations waiting.</p>}
+   <h3>Approved ({approved.length})</h3>
+   {approved.length?<ul className="record-list">{approved.map(a=><li key={a.id}><div><span className="record-title">{label(a)}</span><small>{a.admin?'Administrator':'Member'}{a.member?<> · linked to {name(a.member)}</>:' · no hunter linked'}</small></div>{!a.admin&&<div className="account-actions">{hunterSelect(a)}<button disabled={(links[a.id]||'')===(a.member||'')} onClick={()=>void decide(a,'approved',links[a.id]?`${label(a)} is linked to ${name(links[a.id])}.`:`${label(a)} is no longer linked to a hunter.`)}>Save link</button><button onClick={()=>void decide(a,'suspended',`${label(a)} suspended.`)}>Suspend</button></div>}</li>)}</ul>:<p className="empty">No approved accounts.</p>}
+   {closed.length>0&&<><h3>Rejected or suspended ({closed.length})</h3><ul className="record-list">{closed.map(a=><li key={a.id}><div><span className="record-title">{label(a)}</span><small>{statusLabel[a.status]}</small></div><button onClick={()=>void decide(a,'approved',`${label(a)} reinstated.`)}>Reinstate</button></li>)}</ul></>}
+  </fieldset>}
  </section>;
+}
+function ForumSettings(){
+ const [values,setValues]=useState<{days:string;cap:string}|null>(null),[error,setError]=useState(''),[message,setMessage]=useState(''),[busy,setBusy]=useState(false);
+ useEffect(()=>{forumThreads().then(f=>setValues({days:String(f.settings.retention_days),cap:String(f.settings.thread_cap)})).catch(e=>setError((e as Error).message));},[]);
+ async function save(e:FormEvent){e.preventDefault();if(!values||busy)return;setBusy(true);setError('');setMessage('');try{await forumConfigure(Number(values.days),Number(values.cap));setMessage('Forum limits saved. Messages outside the new limits were deleted.');}catch(e){setError((e as Error).message);}finally{setBusy(false);}}
+ return <form className="panel accounts" onSubmit={save}><h2>Forum limits</h2><p className="section-note">Messages older than the retention period are deleted, and each thread keeps only its newest messages up to the limit. Lowering either deletes messages straight away.</p>
+  {error&&<p className="notice error prose" role="alert">{error}</p>}{message&&<p className="notice" role="status">{message}</p>}
+  {values?<fieldset disabled={busy} className="link-account"><label>Keep messages for (days)<input type="number" min={1} max={365} required value={values.days} onChange={e=>setValues({...values,days:e.target.value})}/></label><label>Messages kept per thread<input type="number" min={5} max={5000} required value={values.cap} onChange={e=>setValues({...values,cap:e.target.value})}/></label><button className="primary">{busy?'Saving…':'Save limits'}</button></fieldset>:!error&&<p role="status">Loading forum limits…</p>}
+ </form>;
 }

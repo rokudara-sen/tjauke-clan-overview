@@ -14,6 +14,7 @@ a{color:inherit;text-decoration:none;text-underline-offset:3px;text-decoration-t
 svg{flex-shrink:0}
 :focus-visible{outline:2px solid var(--accent);outline-offset:3px}
 button,input,select,textarea{font:inherit}
+fieldset{border:0;padding:0;margin:0;min-width:0}
 button{cursor:pointer;background:var(--surface-2);color:var(--text);border:1px solid var(--line-strong);border-radius:0;padding:8px 14px;font-size:var(--fs-2)}
 button:hover{background:#332a24;border-color:#5a4b40}button:active{transform:translateY(1px)}button:disabled{opacity:.55;cursor:wait}
 .primary{background:var(--accent-strong);border-color:var(--accent);color:#fbf3ea}.primary:hover{background:#bd4330;border-color:var(--accent)}
@@ -297,3 +298,32 @@ kbd{font:var(--fs-1) var(--mono);color:var(--text-3);border:1px solid var(--line
  .section,.record-view dl>div,.service li,.tl-entry,.term{break-inside:avoid}
  .section-heading:before{background:var(--text)}
 }
+
+.register{max-width:560px}.register label{margin:18px 0 0}
+.field-note{font-size:var(--fs-1);color:var(--text-3);margin:6px 0 0}
+.availability-free{color:#bcd3b0}.availability-taken,.availability-invalid{color:#f0b4a3}
+.register .form-actions{margin-top:24px;align-items:center}
+.account-groups{border:0;padding:0;margin:0;min-width:0}
+.account-groups h3{margin:24px 0 0;color:var(--text-2)}.account-groups h3:first-child{margin-top:8px}
+.account-groups .record-list p{margin-top:6px;max-width:60ch}
+.account-actions{display:flex;gap:10px;align-items:end;flex-wrap:wrap;justify-content:flex-end}
+.inline-select{font-size:var(--fs-1)}.inline-select select{margin-top:4px;padding:6px 10px;min-width:150px}
+
+.composer{margin-top:16px}.composer label{margin-bottom:12px}
+.panel.composer{margin:12px 0 20px;max-width:760px}
+.composer-foot{display:flex;justify-content:space-between;align-items:center;gap:16px}
+.composer-foot small{font-size:var(--fs-1)}
+.thread-head{display:flex;justify-content:space-between;align-items:baseline;gap:16px;flex-wrap:wrap}
+.thread-head h2{font-size:var(--fs-5);font-stretch:72%;font-weight:650;display:flex;gap:14px;align-items:baseline}
+.messages{list-style:none;margin:16px 0 0;padding:0 4px 0 0;max-height:min(62vh,720px);overflow-y:auto;border-top:1px solid var(--line-strong);border-bottom:1px solid var(--line-strong)}
+.messages li{padding:12px 0 12px 14px;border-bottom:1px solid var(--line);border-left:2px solid transparent}
+.messages li:last-child{border-bottom:0}
+.messages li.mine{border-left-color:var(--accent-strong)}
+.message-meta{display:flex;gap:12px;align-items:baseline;flex-wrap:wrap;font-size:var(--fs-2)}
+.message-meta a{color:var(--text-2);text-decoration:underline;text-decoration-color:var(--line-strong)}
+.message-meta time{font:var(--fs-1) var(--mono);color:var(--text-3)}
+.message-meta .text-button{margin-left:auto;font-size:var(--fs-1);color:var(--text-3)}
+.messages .prose{margin:6px 0 0;max-width:72ch}
+.composer textarea{max-width:none}
+@media(max-width:700px){.account-actions{justify-content:flex-start;width:100%}.accounts .record-list li{flex-direction:column;align-items:stretch}.messages{max-height:none}}
+@media print{.composer,.thread-head .form-actions{display:none!important}.messages{max-height:none;overflow:visible}}
