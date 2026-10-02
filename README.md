@@ -38,6 +38,7 @@ For the local workbook preview, set `VITE_LOCAL_SNAPSHOT=true` and place the bou
 10. Run `supabase/migrations/202610030003_community.sql` once. It adds witness confirmation, portraits (creating the `portraits` public and `portrait-uploads` private storage buckets with their policies), promotion suggestions, glossary suggestions, account deletion and renaming, pending-work counts, recent changes, and forum read markers, mentions, reports and pinned threads.
 11. Run `supabase/migrations/202610040001_standing.sql` once. It separates warrior caste rank (Unblooded to Elite) from senior standing (Elder, Clan Leader, Ancient). Hunters ranked Elder, Leader or Ancient keep that as standing and their warrior rank becomes unrecorded; set it on the hunter record in administration.
 12. Run `supabase/migrations/202610050001_household_seniors.sql` once. It makes the Household senior duty the only place a household senior is recorded (see below), and removes anonymous access to functions meant for signed-in accounts.
+13. Run `supabase/migrations/202610060001_standing_not_earned.sql` once. Records conferring Elder, Clan Leader or Ancient standing can no longer cite an undertaking: senior standing is conferred, not earned through one hunt. Existing records are left as they are until next edited.
 
 ### Household seniors
 

@@ -34,6 +34,8 @@ export function validate(kind: Kind, row: RecordData, data: Dataset): string[] {
   if(!row.house)errors.push('A household senior appointment needs a household.');
   else if(!row.archived&&currentDuty(row)&&data.duties.some(d=>d.id!==row.id&&!d.archived&&d.house===row.house&&isSeniorDuty(d)&&currentDuty(d)))errors.push('This household already has a current household senior. End that appointment first.');
  }
+ // Elder, Clan Leader and Ancient are conferred by the clan and the Council, not earned through a single undertaking.
+ if(kind==='promotions'&&row.hunt&&standingConferred(row))errors.push('Senior standing is conferred, not earned through an undertaking. Clear “Earned through undertaking”.');
  if(kind==='promotions'&&row.hunt){const hunt=data.hunts.find(h=>h.id===row.hunt);if(hunt&&hunt.hunter!==row.member)errors.push('The undertaking belongs to a different hunter.');}
  return errors;
 }
@@ -66,6 +68,8 @@ export const standingOf=(m:RecordData|undefined)=>seniorStandings.includes(Strin
 /** Warrior caste rank and senior standing together, for example "Elite · Ancient". Standing is an ancillary role, not a rung above Elite. */
 export const rankLabel=(m:RecordData|undefined)=>[warriorRank(m),standingOf(m)].filter(Boolean).join(' · ');
 const promotedTo=(p:RecordData)=>p.rank==='Leader'?'Clan Leader':String(p.rank||'');
+/** Whether an advancement record confers senior standing rather than a warrior caste rank. */
+export const standingConferred=(p:RecordData)=>seniorStandings.includes(promotedTo(p));
 /** Hunters who are not dead or departed, so still hold their standing. */
 const serving=(m:RecordData)=>!['Deceased','Departed'].includes(String(m.status));
 /** Clan Leader, Council of Ancients and Elders among serving hunters. Only the first two govern; Elders are listed with senior standing. */

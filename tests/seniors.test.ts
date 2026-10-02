@@ -14,6 +14,13 @@ describe('household senior appointments',()=>{
   expect(validate('duties',row('d2',{name:'Household senior',member:'b',house:'h',status:'Ended',end:'2026-01-01',mandate:'M'}),d)).toEqual([]);
   expect(validate('duties',{...d.duties[0],member:'b'},d)).toEqual([]);
  });
+ it('refuses an undertaking as the source of senior standing, but not of a warrior rank',()=>{
+  const d=emptyData();d.members=[row('k')];d.hunts=[row('h',{hunter:'k'})];
+  const issue='Senior standing is conferred, not earned through an undertaking. Clear “Earned through undertaking”.';
+  for(const rank of ['Elder','Clan Leader','Ancient','Leader'])expect(validate('promotions',row('p',{member:'k',rank,hunt:'h'}),d)).toContain(issue);
+  expect(validate('promotions',row('p',{member:'k',rank:'Ancient'}),d)).toEqual([]);
+  expect(validate('promotions',row('p',{member:'k',rank:'Blooded',hunt:'h'}),d)).toEqual([]);
+ });
  it('shows warrior rank and senior standing together',()=>{
   expect([rankLabel(row('k',{rank:'Elite',standing:'Ancient'})),rankLabel(row('s',{standing:'Ancient'})),rankLabel(row('b',{rank:'Blooded'}))]).toEqual(['Elite · Ancient','Ancient','Blooded']);
  });
@@ -44,6 +51,10 @@ beforeAll(async()=>{
  // Supabase's default privileges grant anon execute on every public function; the migration has to take it back.
  await db.exec('grant execute on all functions in schema public to anon');
  await db.exec(fs.readFileSync('supabase/migrations/202610050001_household_seniors.sql','utf8'));
+ // A standing record citing an undertaking from before the rule stays as it was.
+ await db.exec(`insert into public.hunts(id,name,hunter,quarry,weapon,state,outside,review) values('hunt-k','Old hunt','m1','Q','W','Completed','No','Accepted');
+  insert into public.promotions(id,name,member,rank,hunt) values('p-old','Old record','m1','Ancient','hunt-k');`);
+ await db.exec(fs.readFileSync('supabase/migrations/202610060001_standing_not_earned.sql','utf8'));
 });
 afterAll(async()=>await db.close());
 
@@ -88,6 +99,16 @@ describe('household senior migration',()=>{
   await as('authenticated',ids.admin);
   const second=(await db.query<any>('select public.import_archive($1) as c',[JSON.stringify(fixture)])).rows[0].c;
   expect([second.houses,second.senior_duties]).toEqual([0,0]);
+ });
+});
+
+describe('senior standing is not earned',()=>{
+ it('rejects a standing record that cites an undertaking and keeps earlier ones',async()=>{
+  await as('authenticated',ids.admin);
+  await expect(save('promotions',{id:'p-new',name:'Ancient',member:'m1',rank:'Ancient',hunt:'hunt-k'})).rejects.toThrow(/promotions_standing_not_earned/);
+  await save('promotions',{id:'p-ok',name:'Blooded',member:'m1',rank:'Blooded',hunt:'hunt-k'});
+  await save('promotions',{id:'p-anc',name:'Ancient',member:'m1',rank:'Ancient'});
+  expect((await raw('promotions','p-old')).hunt).toBe('hunt-k');
  });
 });
 

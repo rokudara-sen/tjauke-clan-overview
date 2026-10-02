@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { active, currentDuty, rankLabel, rankSteps, schemas, serviceRecord, standingHistory, standingOf, warriorRank, warriorRanks, type Dataset, type Kind, type RecordData } from './model';
+import { active, currentDuty, isSeniorDuty, rankLabel, rankSteps, schemas, serviceRecord, standingHistory, standingOf, warriorRank, warriorRanks, type Dataset, type Kind, type RecordData } from './model';
 export const href=(kind:string,id?:string)=>`#/${kind}${id?'/'+encodeURIComponent(id):''}`;
 const options=(kind:Kind,key:string)=>schemas[kind].fields.find(f=>f.key===key)?.options||[];
 const slug=(v:unknown)=>String(v||'unclassified').toLowerCase().replace(/[^a-z]+/g,'-');
@@ -65,21 +65,25 @@ export function RankTrack({member,data}:{member:RecordData;data:Dataset}){
  </li>)}</ol>{note&&<p className="section-note">{note}</p>}</>;
 }
 
-/** Senior standing, earlier standings no longer held, and appointments. Not a continuation of the rank track. */
+/** Rank and standing, Council seat, earlier standings no longer held, and appointments, for example
+ * "Elite · Ancient", "Council of Ancients", "Former Clan Leader", "Household senior of Vek’ta". Standing is not a continuation of the rank track. */
 export function StandingOffices({member,data}:{member:RecordData;data:Dataset}){
  const standing=standingOf(member),{entries,former}=standingHistory(member,data);
  const duties=active(data.duties).filter(d=>d.member===member.id),current=duties.filter(currentDuty),past=duties.filter(d=>!currentDuty(d));
  const house=(id:unknown)=>data.houses.find(h=>h.id===id);
+ // Household-senior appointments read the same whatever the duty was named; other offices keep their recorded name.
+ const office=(d:RecordData)=>isSeniorDuty(d)&&house(d.house)?`Household senior of ${house(d.house)!.name}`:String(d.name);
  // The database derives the household senior from the current senior duty; this covers a duty that is not published.
  const seniorOf=active(data.houses).filter(h=>h.senior===member.id&&!current.some(d=>d.house===h.id));
  if(!standing&&!former.length&&!duties.length&&!seniorOf.length)return <p className="empty">No senior standing or offices recorded.</p>;
  return <div className="standing-block">
-  {standing?<p className="standing-title">{standing}{standing==='Ancient'&&<span> · Council of Ancients</span>}</p>:<p className="section-note">No senior standing. Offices are appointments, not ranks.</p>}
-  {(former.length>0||current.length>0||past.length>0||seniorOf.length>0)&&<ul className="offices">
+  {standing?<p className="standing-title">{rankLabel(member)}</p>:<p className="section-note">No senior standing. Offices are appointments, not ranks.</p>}
+  {(standing==='Ancient'||former.length>0||current.length>0||past.length>0||seniorOf.length>0)&&<ul className="offices">
+   {standing==='Ancient'&&<li><span>Council of Ancients</span></li>}
    {former.map(s=>{const e=entries.find(p=>(p.rank==='Leader'?'Clan Leader':p.rank)===s)!;return <li key={s}><a href={href('promotions',e.id)}>Former {s}</a>{(e.date||e.era)&&<small>{String(e.date||e.era)}</small>}</li>;})}
-   {current.map(d=><li key={d.id}><a href={href('duties',d.id)}>{d.name}</a><small>{[d.status==='Acting'&&'Acting',house(d.house)?.name,d.start&&`since ${d.start}`].filter(Boolean).join(' · ')}</small></li>)}
+   {current.map(d=><li key={d.id}><a href={href('duties',d.id)}>{office(d)}</a><small>{[d.status==='Acting'&&'Acting',!isSeniorDuty(d)&&house(d.house)?.name,d.start&&`since ${d.start}`].filter(Boolean).join(' · ')}</small></li>)}
    {seniorOf.map(h=><li key={h.id}><a href={href('houses',h.id)}>Household senior of {h.name}</a></li>)}
-   {past.map(d=><li key={d.id} className="past"><a href={href('duties',d.id)}>Former: {d.name}</a><small>{[house(d.house)?.name,d.end&&`until ${d.end}`].filter(Boolean).join(' · ')}</small></li>)}
+   {past.map(d=><li key={d.id} className="past"><a href={href('duties',d.id)}>Former: {office(d)}</a><small>{[!isSeniorDuty(d)&&house(d.house)?.name,d.end&&`until ${d.end}`].filter(Boolean).join(' · ')}</small></li>)}
   </ul>}
  </div>;
 }
