@@ -36,6 +36,12 @@ For the local workbook preview, set `VITE_LOCAL_SNAPSHOT=true` and place the bou
 8. In Authentication → Sign In / Providers, keep email sign-ups enabled. Email confirmation is optional: administrator approval is the real gate, but confirmation proves the address belongs to the person.
 9. In Authentication → URL Configuration, set the Site URL to `https://rokudara-sen.github.io/tjauke-clan-overview/` and add `https://rokudara-sen.github.io/tjauke-clan-overview/**` to the redirect URLs, so confirmation and password reset links return to the site. The app uses the PKCE flow, so the link arrives as `?code=` and does not collide with the `#/` page routes. Password reset links add `?reset=1#/reset`, which the wildcard covers.
 10. Run `supabase/migrations/202610030003_community.sql` once. It adds witness confirmation, portraits (creating the `portraits` public and `portrait-uploads` private storage buckets with their policies), promotion suggestions, glossary suggestions, account deletion and renaming, pending-work counts, recent changes, and forum read markers, mentions, reports and pinned threads.
+11. Run `supabase/migrations/202610040001_standing.sql` once. It separates warrior caste rank (Unblooded to Elite) from senior standing (Elder, Clan Leader, Ancient). Hunters ranked Elder, Leader or Ancient keep that as standing and their warrior rank becomes unrecorded; set it on the hunter record in administration.
+12. Run `supabase/migrations/202610050001_household_seniors.sql` once. It makes the Household senior duty the only place a household senior is recorded (see below), and removes anonymous access to functions meant for signed-in accounts.
+
+### Household seniors
+
+A duty whose name starts with *Household senior* and names a household is that household's senior appointment. The current one (Active or Acting, no end date, not archived) sets the household's senior, which administration shows read-only. To change a senior, end the current appointment and add a new one; earlier appointments stay in the record. Households that had a senior without such a duty when the migration ran received one, recorded as "Household senior of …".
 
 People request an account at `#/register` with a username, email, password, optionally the hunter they play, and a note. New accounts can sign in but do nothing until an administrator approves them under **Accounts** in administration, optionally linking their hunter at the same time. Administrators can also reject, suspend, reinstate and rename accounts and change hunter links. People can reset a forgotten password from the sign-in page, and delete their own account by typing their username; hunter records stay, and their forum messages remain without a name until they expire. Losing approval removes the hunter link. Emails are never returned by any function the site calls; accounts are identified by username everywhere, including administration.
 
@@ -45,7 +51,7 @@ What a linked hunter can do is decided by `public.hunter_save` in the database, 
 | --- | --- |
 | Every hunter | Own epithet, biography, appearance, hooks and profile link (live). Declare own undertakings (private drafts) and update them until judged. |
 | Household senior | Their household's meaning, holding, history and customs (live). Judge and publish undertakings of their household's hunters. |
-| Elder, Leader, Ancient | Judge and publish any undertaking except their own. Add history entries as drafts; publish drafts written by someone else. |
+| Elder, Clan Leader, Ancient standing | Judge and publish any undertaking except their own. Add history entries as drafts; publish drafts written by someone else. |
 
 Rank, standing, household, sponsor, duties, politics, rank history, glossary and published history stay administrator-only. Every hunter change needs a change note and is recorded in the audit trail with the hunter's account as actor.
 
@@ -59,7 +65,7 @@ Messages are not kept: anything older than the retention period (30 days by defa
 
 - **Waiting work.** "Your account" shows a count of things waiting for that account: undertakings to judge, history drafts to review, witness requests and forum mentions; for administrators also registrations, portraits, reported messages, glossary suggestions and promotion suggestions. The Forum link shows how many threads have new messages. The administration page lists the waiting items and jumps to each panel.
 - **Witnesses.** Naming or changing an undertaking's witness sets *Witness confirmation* to Requested; the witness confirms or declines from their account until the undertaking is judged. Witnesses recorded before this existed are left unanswered rather than assumed confirmed.
-- **Promotion suggestions.** Accepted claims without a rank history entry citing them appear for administrators, with a pre-filled entry (the rank is left to choose) or *Not a promotion* to stop suggesting it.
+- **Advancement suggestions.** Accepted blooding rites by hunters not yet Blooded, without an advancement citing them, appear for administrators with a pre-filled Blooded entry, or *Not an advancement* to stop suggesting it. Personal and training hunts never suggest one, and nothing suggests senior standing.
 - **Trophies.** Undertakings, hunter profiles and households list trophies from claims judged Accepted only.
 - **Portraits.** A linked hunter uploads a JPEG, PNG or WebP image up to 2 MB into a private bucket. An administrator approves it, which copies it into the public bucket and sets the hunter's portrait, or rejects it, which deletes it.
 - **Glossary suggestions.** Approved accounts suggest terms from their account page. They arrive as provisional drafts (at most five waiting per account) for an administrator to publish under the Glossary record type.

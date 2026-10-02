@@ -6,9 +6,9 @@ const slug=(v:unknown)=>String(v||'unclassified').toLowerCase().replace(/[^a-z]+
 const byName=(a:RecordData,b:RecordData)=>String(a.name).localeCompare(String(b.name));
 const NONE='—none';
 
-type Row={key:string;label:ReactNode;note?:string};type Item={row:string;col:string;label:string;to:string};
+type Row={key:string;label:ReactNode;note?:string};type Item={row:string;col:string;label:string;to:string;className?:string};
 function DotMatrix({caption,corner,rows,cols,items}:{caption:string;corner:string;rows:Row[];cols:string[];items:Item[]}){
- return <div className="table-scroll"><table className="dot-matrix"><caption className="sr-only">{caption}</caption><thead><tr><th scope="col">{corner}</th>{cols.map(c=><th scope="col" key={c}>{c}</th>)}<th scope="col" className="total">Total</th></tr></thead><tbody>{rows.map(r=>{const mine=items.filter(i=>i.row===r.key);return <tr key={r.key}><th scope="row">{r.label}{r.note&&<small>{r.note}</small>}</th>{cols.map(c=><td key={c}>{mine.filter(i=>i.col===c).map(i=><a key={i.to} className="dot" href={i.to} aria-label={i.label} data-tip={i.label}/>)}</td>)}<td className="total">{mine.length}</td></tr>;})}</tbody></table></div>;
+ return <div className="table-scroll"><table className="dot-matrix"><caption className="sr-only">{caption}</caption><thead><tr><th scope="col">{corner}</th>{cols.map(c=><th scope="col" key={c}>{c}</th>)}<th scope="col" className="total">Total</th></tr></thead><tbody>{rows.map(r=>{const mine=items.filter(i=>i.row===r.key);return <tr key={r.key}><th scope="row">{r.label}{r.note&&<small>{r.note}</small>}</th>{cols.map(c=><td key={c}>{mine.filter(i=>i.col===c).map(i=><a key={i.to} className={i.className?`dot ${i.className}`:'dot'} href={i.to} aria-label={i.label} data-tip={i.label}/>)}</td>)}<td className="total">{mine.length}</td></tr>;})}</tbody></table></div>;
 }
 function householdRows(data:Dataset,used:Set<string>):Row[]{
  const rows:Row[]=active(data.houses).sort(byName).map(h=>({key:h.id,label:<a href={href('houses',h.id)}>{h.name}</a>,note:h.status&&h.status!=='Active'?String(h.status):undefined}));
@@ -17,12 +17,12 @@ function householdRows(data:Dataset,used:Set<string>):Row[]{
 const houseKey=(data:Dataset,house:unknown)=>house&&active(data.houses).some(h=>h.id===house)?String(house):NONE;
 const withUnlisted=(cols:string[],values:string[],fallback:string)=>values.some(v=>!cols.includes(v))?[...cols,fallback]:cols;
 
-/** Warrior caste only. Hunters with senior standing are listed separately, not as higher rungs of this ladder. */
+/** Every hunter by warrior caste rank. Senior standing is an ancillary role held alongside that rank, so Elders, Clan Leaders and Ancients count under their warrior rank and are marked. */
 export function WarriorComposition({data}:{data:Dataset}){
- const members=active(data.members).filter(m=>!standingOf(m));if(!members.length)return <p className="empty">No warrior caste hunters recorded.</p>;
- const cols=withUnlisted(warriorRanks,members.map(warriorRank),'Not recorded');
- const items=members.sort(byName).map(m=>({row:houseKey(data,m.house),col:warriorRank(m)||'Not recorded',label:`${m.name}, ${warriorRank(m)||'rank not recorded'}`,to:href('members',m.id)}));
- return <DotMatrix caption="Warrior caste hunters in each household by rank" corner="Household" rows={householdRows(data,new Set(items.map(i=>i.row)))} cols={cols} items={items}/>;
+ const members=active(data.members);if(!members.length)return <p className="empty">No hunters recorded.</p>;
+ const cols=withUnlisted(warriorRanks,members.map(warriorRank),'Not recorded'),anySenior=members.some(m=>standingOf(m));
+ const items=members.sort(byName).map(m=>({row:houseKey(data,m.house),col:warriorRank(m)||'Not recorded',label:`${m.name}, ${warriorRank(m)||'warrior rank not recorded'}${standingOf(m)?`, ${standingOf(m)}`:''}`,to:href('members',m.id),className:standingOf(m)?'senior':undefined}));
+ return <><DotMatrix caption="Hunters in each household by warrior caste rank" corner="Household" rows={householdRows(data,new Set(items.map(i=>i.row)))} cols={cols} items={items}/>{anySenior&&<p className="section-note dot-key"><span className="dot senior" aria-hidden="true"/>Also holds senior standing: Elder, Clan Leader or Ancient.</p>}</>;
 }
 
 /** Elders, Clan Leader and Ancients grouped by household. */
@@ -70,7 +70,7 @@ export function StandingOffices({member,data}:{member:RecordData;data:Dataset}){
  const standing=standingOf(member),{entries,former}=standingHistory(member,data);
  const duties=active(data.duties).filter(d=>d.member===member.id),current=duties.filter(currentDuty),past=duties.filter(d=>!currentDuty(d));
  const house=(id:unknown)=>data.houses.find(h=>h.id===id);
- // A household senior recorded on the household without a matching duty record still shows.
+ // The database derives the household senior from the current senior duty; this covers a duty that is not published.
  const seniorOf=active(data.houses).filter(h=>h.senior===member.id&&!current.some(d=>d.house===h.id));
  if(!standing&&!former.length&&!duties.length&&!seniorOf.length)return <p className="empty">No senior standing or offices recorded.</p>;
  return <div className="standing-block">

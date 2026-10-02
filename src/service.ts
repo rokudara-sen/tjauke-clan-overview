@@ -13,7 +13,7 @@ export async function saveRecord(kind:Kind,row:RecordData,reason:string){if(!cli
 export async function exportBackup(){if(!client)throw Error('Connect Supabase before exporting.');const data=await loadData(true);const {data:audit,error}=await client.from('audit_log').select('*').order('changed_at');if(error)throw error;return {exported_at:new Date().toISOString(),data,audit};}
 // A table or function from a later migration that has not been applied yet.
 export const missingTable=(e:{code?:string;message?:string})=>['42P01','PGRST205','42883','PGRST202'].includes(String(e.code))||/does not exist|could not find/i.test(String(e.message));
-export const pendingMigration='The database needs the latest updates in supabase/migrations (up to 202610030003_community.sql) before this works.';
+export const pendingMigration='The database needs the latest updates in supabase/migrations (up to 202610050001_household_seniors.sql) before this works.';
 async function call<T>(fn:string,args?:Record<string,unknown>):Promise<T>{if(!client)throw Error('Connect Supabase first.');const {data,error}=await client.rpc(fn,args);if(error)throw missingTable(error)?Error(pendingMigration):error;return data as T;}
 export type Access={admin:boolean;username:string|null;status:'pending'|'approved'|'rejected'|'suspended';member:string|null;name:string|null;rank:string|null;standing?:string|null;elder:boolean;seniorOf:string[]};
 export type Workspace={member:RecordData;houses:RecordData[];hunts:RecordData[];chronicle:RecordData[]};
@@ -73,7 +73,8 @@ export async function uploadPortrait(member:string,file:File){
  if(file.size>portraitMaxBytes)throw Error('The image must be 2 MB or smaller.');
  const path=`${member}/${crypto.randomUUID()}.${file.type.split('/')[1].replace('jpeg','jpg')}`;
  const {error}=await client.storage.from('portrait-uploads').upload(path,file,{contentType:file.type});if(error)throw error;
- const replaced=await call<string[]>('submit_portrait',{object_path:path});
+ // An upload the database did not accept would otherwise stay in storage with nothing pointing to it.
+ const replaced=await call<string[]>('submit_portrait',{object_path:path}).catch(async e=>{await client!.storage.from('portrait-uploads').remove([path]);throw e;});
  if(replaced.length)await client.storage.from('portrait-uploads').remove(replaced);
 }
 export type PendingPortrait={id:string;member:string;name:string;path:string;created_at:string;current:string|null};
@@ -86,7 +87,7 @@ export async function decidePortrait(p:PendingPortrait,approve:boolean){
  const {data:blob,error}=await client.storage.from('portrait-uploads').download(p.path);if(error)throw error;
  const {error:upload}=await client.storage.from('portraits').upload(p.path,blob,{contentType:blob.type,upsert:true});if(upload)throw upload;
  const url=client.storage.from('portraits').getPublicUrl(p.path).data.publicUrl;
- const previous=await call<string|null>('decide_portrait',{portrait_id:p.id,approve:true,public_url:url});
+ const previous=await call<string|null>('decide_portrait',{portrait_id:p.id,approve:true,public_url:url}).catch(async e=>{await client!.storage.from('portraits').remove([p.path]);throw e;});
  await client.storage.from('portrait-uploads').remove([p.path]);
  const marker='/object/public/portraits/';if(previous?.includes(marker)&&previous!==url)await client.storage.from('portraits').remove([decodeURIComponent(previous.split(marker)[1])]);
 }

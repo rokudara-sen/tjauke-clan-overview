@@ -10,7 +10,7 @@ describe('warrior caste rank and senior standing',()=>{
   const leader=row('l',{rank:'Leader'});
   expect([warriorRank(leader),standingOf(leader),rankLabel(leader)]).toEqual(['','Clan Leader','Clan Leader']);
   const both=row('b',{rank:'Elite',standing:'Elder'});
-  expect([warriorRank(both),standingOf(both),rankLabel(both)]).toEqual(['Elite','Elder','Elder']);
+  expect([warriorRank(both),standingOf(both),rankLabel(both)]).toEqual(['Elite','Elder','Elite · Elder']);
  });
  it('tracks four warrior steps and leaves the track empty for an Ancient with no recorded warrior rank',()=>{
   const d=emptyData();

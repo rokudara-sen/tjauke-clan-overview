@@ -165,6 +165,7 @@ thead th{padding-top:8px;border-bottom-color:var(--line-strong)}
 .admin-grid{display:grid;grid-template-columns:minmax(220px,.7fr) minmax(0,1.4fr);gap:24px;align-items:start}
 .text-button{border:0;padding:0;background:none;text-align:left;color:var(--text);font-size:var(--fs-3)}.text-button:hover{background:none;color:var(--accent)}
 .editor label{margin-bottom:18px}.editor fieldset{padding:0;margin:0;border:0;min-width:0}
+.derived-field{margin-bottom:18px;font-size:var(--fs-2);color:var(--text-2)}.derived-field p{margin:6px 0 0;color:var(--text)}
 .form-actions{display:flex;gap:12px}
 
 @media(prefers-reduced-motion:no-preference){a,button,input,select,textarea,.sidebar nav a{transition:color .12s,background-color .12s,border-color .12s}}
@@ -207,6 +208,8 @@ thead th{padding-top:8px;border-bottom-color:var(--line-strong)}
 .dot:before{content:'';position:absolute;inset:7px;border-radius:50%;background:var(--text);box-shadow:0 0 0 2px var(--bg)}
 .dot:hover:before,.dot:focus-visible:before{background:var(--accent)}
 .dot:focus-visible{outline-offset:0}
+.dot.senior:before{background:var(--bg);box-shadow:0 0 0 2px var(--text)}.dot.senior:hover:before,.dot.senior:focus-visible:before{background:var(--bg);box-shadow:0 0 0 2px var(--accent)}
+.dot-key{display:flex;align-items:center;gap:4px;margin-top:8px}.dot-key .dot{pointer-events:none}
 .dot:hover:after,.dot:focus-visible:after{content:attr(data-tip);position:absolute;bottom:calc(100% + 4px);left:50%;transform:translateX(-50%);z-index:5;white-space:nowrap;padding:5px 9px;background:var(--surface-2);border:1px solid var(--line-strong);color:var(--text);font-size:var(--fs-1);pointer-events:none}
 
 .lineage,.lineage ul{list-style:none;margin:0;padding:0}

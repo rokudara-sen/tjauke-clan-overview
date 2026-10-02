@@ -2,8 +2,8 @@ import definition from './schema.json';
 export type Kind = keyof typeof definition;
 export type RecordData = { id: string; archived: boolean; published: boolean; updated_at?: string; [key: string]: string | boolean | undefined };
 export type Dataset = Record<Kind, RecordData[]>;
-/** `term` is the clan's provisional Yautja word for a field; `legacy` is the workbook column heading when it differs from the label. */
-export type Field = {key: string; label: string; type: string; required?: boolean; ref?: Kind; options?: string[]; term?: string; legacy?: string};
+/** `term` is the clan's provisional Yautja word for a field; `legacy` is the workbook column heading when it differs from the label; `derived` explains where the database takes a read-only value from. */
+export type Field = {key: string; label: string; type: string; required?: boolean; ref?: Kind; options?: string[]; term?: string; legacy?: string; derived?: string};
 export const schemas = definition as Record<Kind, {title: string; sheet: string; prefix: string; added?: string; fields: Field[]}>;
 export const kinds = Object.keys(schemas) as Kind[];
 export const emptyData = (): Dataset => Object.fromEntries(kinds.map(k=>[k,[]])) as unknown as Dataset;
@@ -30,6 +30,10 @@ export function validate(kind: Kind, row: RecordData, data: Dataset): string[] {
  if(kind==='members'){let id=String(row.sponsor||'');const seen=new Set([row.id]);while(id){if(seen.has(id)){errors.push('Sponsor cycle detected.');break;}seen.add(id);id=String(data.members.find(r=>r.id===id)?.sponsor||'');}}
  if(kind==='hunts'&&row.hunter&&row.hunter===row.witness)errors.push('Hunter and witness must differ.');
  if(kind==='duties'&&row.start&&row.end&&row.end<row.start)errors.push('End date precedes start date.');
+ if(kind==='duties'&&isSeniorDuty(row)){
+  if(!row.house)errors.push('A household senior appointment needs a household.');
+  else if(!row.archived&&currentDuty(row)&&data.duties.some(d=>d.id!==row.id&&!d.archived&&d.house===row.house&&isSeniorDuty(d)&&currentDuty(d)))errors.push('This household already has a current household senior. End that appointment first.');
+ }
  if(kind==='promotions'&&row.hunt){const hunt=data.hunts.find(h=>h.id===row.hunt);if(hunt&&hunt.hunter!==row.member)errors.push('The undertaking belongs to a different hunter.');}
  return errors;
 }
@@ -59,18 +63,19 @@ const legacyStanding:Record<string,string>={Elder:'Elder',Leader:'Clan Leader',A
 export const warriorRank=(m:RecordData|undefined)=>warriorRanks.includes(String(m?.rank))?String(m!.rank):'';
 /** Senior standing (Elder, Clan Leader, Ancient), or '' when the hunter holds none. */
 export const standingOf=(m:RecordData|undefined)=>seniorStandings.includes(String(m?.standing))?String(m!.standing):legacyStanding[String(m?.rank)]||'';
-/** What a roster shows: senior standing where held, otherwise warrior caste rank. */
-export const rankLabel=(m:RecordData|undefined)=>standingOf(m)||warriorRank(m);
+/** Warrior caste rank and senior standing together, for example "Elite · Ancient". Standing is an ancillary role, not a rung above Elite. */
+export const rankLabel=(m:RecordData|undefined)=>[warriorRank(m),standingOf(m)].filter(Boolean).join(' · ');
 const promotedTo=(p:RecordData)=>p.rank==='Leader'?'Clan Leader':String(p.rank||'');
 /** Hunters who are not dead or departed, so still hold their standing. */
 const serving=(m:RecordData)=>!['Deceased','Departed'].includes(String(m.status));
-/** Clan Leader, Council of Ancients and Elders among serving hunters. */
+/** Clan Leader, Council of Ancients and Elders among serving hunters. Only the first two govern; Elders are listed with senior standing. */
 export function clanAuthority(data:Dataset){
  const members=active(data.members).filter(serving).sort((a,b)=>String(a.name).localeCompare(String(b.name)));
  const holding=(s:string)=>members.filter(m=>standingOf(m)===s);
  return {leaders:holding('Clan Leader'),ancients:holding('Ancient'),elders:holding('Elder')};
 }
-/** Household-senior appointments are shown as household leadership, not alongside other duties. */
+/** Household-senior appointments are shown as household leadership, not alongside other duties.
+ * The current one decides the household's senior (the database keeps houses.senior in step); keep this pattern in line with private.is_senior_duty. */
 export const isSeniorDuty=(d:RecordData)=>/^household senior\b/i.test(String(d.name||'').trim());
 export const currentDuty=(d:RecordData)=>['Active','Acting'].includes(String(d.status))&&!d.end;
 /** Recorded senior standing in date order, with the earlier standings a hunter no longer holds. */
