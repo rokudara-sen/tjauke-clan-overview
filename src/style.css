@@ -138,6 +138,12 @@ thead th{padding-top:8px;border-bottom-color:var(--line-strong)}
 .matrix th{min-width:150px}
 .matrix th small{display:block;font-size:var(--fs-1);font-weight:400;margin-top:2px}
 .matrix td{text-align:center;padding:6px}
+/* Affiliation names stay in view: the matrix scrolls inside its own window-high area with the first row and column pinned.
+   Collapsed borders scroll away from sticky cells, so their dividers are drawn as shadows. */
+.matrix-scroll{max-height:calc(100dvh - 96px);overflow:auto}
+.matrix thead th{position:sticky;top:0;z-index:2;background:var(--bg);box-shadow:inset 0 -1px var(--line-strong)}
+.matrix tbody th{position:sticky;left:0;z-index:1;background:var(--bg);box-shadow:inset -1px 0 var(--line-strong),inset 0 -1px var(--line)}
+.matrix thead th:first-child{left:0;z-index:3;box-shadow:inset -1px 0 var(--line-strong),inset 0 -1px var(--line-strong)}
 .matrix .stance{width:100%;min-height:52px}
 .stance{--cut:6px;--edge:#5b4e44;--fill:#2a2420;display:inline-block;font-size:var(--fs-2);font-weight:500;padding:8px 14px;color:var(--text)}
 .matrix .stance{font-family:var(--display);font-weight:600;letter-spacing:.02em}
@@ -382,6 +388,7 @@ kbd{font:var(--fs-1) var(--mono);color:var(--text-3);border:1px solid var(--line
 .composer textarea{max-width:none}
 @media(max-width:700px){.account-actions{justify-content:flex-start;width:100%}.accounts .record-list li{flex-direction:column;align-items:stretch}.messages{max-height:none}}
 @media print{.composer,.thread-head .form-actions{display:none!important}.messages{max-height:none;overflow:visible}}
+@media print{.matrix-scroll{max-height:none;overflow:visible}.matrix th{position:static}}
 
 footer a{color:var(--text-2);text-decoration:underline;text-decoration-color:var(--line-strong)}footer a:hover{color:var(--text)}
 .badge,.sidebar nav a span.unread{display:inline-block;min-width:20px;margin-left:8px;padding:0 6px;font:500 var(--fs-1)/18px var(--mono);text-align:center;color:#fbf3ea;background:var(--accent-strong);font-variant-numeric:tabular-nums}
