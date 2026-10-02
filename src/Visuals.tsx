@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { active, schemas, type Dataset, type Kind, type RecordData } from './model';
+import { active, rankSteps, schemas, serviceRecord, type Dataset, type Kind, type RecordData } from './model';
 export const href=(kind:string,id?:string)=>`#/${kind}${id?'/'+encodeURIComponent(id):''}`;
 const options=(kind:Kind,key:string)=>schemas[kind].fields.find(f=>f.key===key)?.options||[];
 const slug=(v:unknown)=>String(v||'unclassified').toLowerCase().replace(/[^a-z]+/g,'-');
@@ -46,4 +46,23 @@ export function EvidenceKey(){return <ul className="evidence-key" aria-label="Ev
 export function Timeline({rows}:{rows:RecordData[]}){
  const era=(r?:RecordData)=>String(r?.era||'Era not recorded');
  return <ol className="timeline">{rows.flatMap((r,i)=>[...(i===0||era(r)!==era(rows[i-1])?[<li key={`era-${r.id}`} className={`tl-era ${slug(r.certainty)}`}>{era(r)}</li>]:[]),<li key={r.id} className={`tl-entry ${slug(r.certainty)}`}><details><summary><span className={`tl-mark ${slug(r.certainty)}`} aria-hidden="true"/><strong>{r.name}</strong><span className="tag">{r.certainty||'Not classified'}</span></summary>{r.summary&&<p>{r.summary}</p>}<p className="prose">{r.body}</p><a href={href('chronicle',r.id)}>Sources and references</a></details></li>])}</ol>;
+}
+
+export function RankTrack({member,data}:{member:RecordData;data:Dataset}){
+ if(!member.rank)return <p className="empty">Rank not recorded.</p>;
+ const steps=rankSteps(member,data),recorded=steps.some(s=>s.promotion);
+ return <><ol className="rank-track" aria-label={`Rank: ${member.rank}`}>{steps.map(s=><li key={s.rank} className={s.current?'current':s.reached?'reached':undefined} aria-current={s.current?'step':undefined}>
+  <span className="rank-name">{s.rank}</span>
+  {s.promotion&&<a href={href('promotions',s.promotion.id)}>{s.promotion.date||s.promotion.era||'Recorded'}</a>}
+ </li>)}</ol>{!recorded&&<p className="section-note">No promotions recorded yet. The current rank comes from the hunter record.</p>}</>;
+}
+
+export function ServiceRecord({member,data}:{member:RecordData;data:Dataset}){
+ const entries=serviceRecord(member.id,data);
+ if(!entries.length)return <p className="empty">No undertakings, duties, history or promotions recorded.</p>;
+ const firstUndated=entries.findIndex(e=>!e.date);
+ return <ol className={firstUndated===0?'service undated-only':'service'}>{entries.flatMap((e,i)=>[...(i===firstUndated?[<li key="undated" className="service-group">No real-world date recorded</li>]:[]),<li key={`${e.kind}/${e.id}/${e.role}`}>
+  {firstUndated!==0&&<span className="service-date">{e.date||''}</span>}
+  <div><a href={href(e.kind,e.id)}>{e.title}</a><small>{[e.role,e.era,e.state].filter(Boolean).join(' · ')}</small></div>
+ </li>])}</ol>;
 }

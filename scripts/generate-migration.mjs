@@ -1,6 +1,9 @@
 import fs from 'node:fs';
 const schemas=JSON.parse(fs.readFileSync('src/schema.json','utf8'));
-const q=s=>`'${s.replaceAll("'","''")}'`, ident=s=>`"${s}"`, tables=Object.keys(schemas);
+const q=s=>`'${s.replaceAll("'","''")}'`, ident=s=>`"${s}"`;
+// Kinds and fields marked "added" belong to later hand-written migrations; this file stays the initial schema.
+for(const k of Object.keys(schemas)){if(schemas[k].added)delete schemas[k];else schemas[k].fields=schemas[k].fields.filter(f=>!f.added);}
+const tables=Object.keys(schemas);
 let sql=`-- Initial schema. Run once through Supabase migrations or the SQL editor.
 begin;
 create schema if not exists private;

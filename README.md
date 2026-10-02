@@ -28,6 +28,23 @@ For the local workbook preview, set `VITE_LOCAL_SNAPSHOT=true` and place the bou
 
 4. Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` in `.env.local`, and set `VITE_LOCAL_SNAPSHOT=false`. Restart Vite.
 5. Sign in at `#/admin`. Only explicitly approved users can administer records. Public keys are safe to configure in the frontend; secret/service-role keys and database passwords are not.
+6. Run `supabase/migrations/202610030001_hunters.sql` once, after the first migration. It adds rank history, the glossary, dated relation assessments and hunter accounts without changing existing records. Until it runs, the public site works but shows these sections empty, and hunter sign-in reports that the update is missing.
+
+## Hunter accounts
+
+Hunters sign in at `#/account`. To give a hunter access, create an Auth user for them in Authentication → Users with a password (they can change it after signing in), then link the email to their hunter record under **Hunter accounts** in administration. One account links to one hunter. Archiving the hunter record removes that account's access.
+
+What a linked hunter can do is decided by `public.hunter_save` in the database, not by the interface:
+
+| Who | Can change |
+| --- | --- |
+| Every hunter | Own epithet, biography, appearance, hooks and profile link (live). Declare own undertakings (private drafts) and update them until judged. |
+| Household senior | Their household's meaning, holding, history and customs (live). Judge and publish undertakings of their household's hunters. |
+| Elder, Leader, Ancient | Judge and publish any undertaking except their own. Add history entries as drafts; publish drafts written by someone else. |
+
+Rank, standing, household, sponsor, duties, politics, rank history, glossary and published history stay administrator-only. Every hunter change needs a change note and is recorded in the audit trail with the hunter's account as actor.
+
+To record a change of stance in Politics, open the current assessment in administration and choose **Record a new assessment**. The earlier one is archived in the same transaction and stays visible in that direction's history.
 
 The raw tables have RLS and allowlisted administrator reads only. All writes go through authorization-checked RPCs with typed constraints, stable IDs, optimistic concurrency checks and audit logging. Public reads use `public_archive()`, which returns only published records and strips administrative timestamps and private player handles. Archived published records remain addressable for historical references but are excluded from active totals.
 
@@ -50,7 +67,7 @@ npm test
 npm run build
 ```
 
-Tests use embedded PostgreSQL (PGlite) for the actual migration, anonymous/ordinary-user/administrator boundaries, audit capture, private-field projection, stale edits, cyclic imports and idempotence. These do not replace hosted authentication and API checks. Test fixtures live only in tests and are never seeded into a real project.
+Tests use embedded PostgreSQL (PGlite) for the actual migrations, hunter permissions by rank and household seniority, anonymous/ordinary-user/administrator boundaries, audit capture, private-field projection, stale edits, cyclic imports and idempotence. These do not replace hosted authentication and API checks. Test fixtures live only in tests and are never seeded into a real project.
 
 ## Deployment
 

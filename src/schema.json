@@ -73,6 +73,12 @@
         "required": true
       },
       {
+        "key": "assessed",
+        "label": "Assessment date",
+        "type": "date",
+        "added": "202610030001"
+      },
+      {
         "key": "notes",
         "label": "Reasons / agreements / context",
         "type": "textarea"
@@ -541,6 +547,120 @@
       {
         "key": "rulesUrl",
         "label": "CMU / honour code URL",
+        "type": "url"
+      }
+    ]
+  },
+  "promotions": {
+    "title": "Rank history",
+    "sheet": "",
+    "prefix": "PRM",
+    "added": "202610030001",
+    "fields": [
+      {
+        "key": "name",
+        "label": "Entry title",
+        "type": "text",
+        "required": true
+      },
+      {
+        "key": "member",
+        "label": "Hunter",
+        "type": "ref",
+        "ref": "members",
+        "required": true
+      },
+      {
+        "key": "rank",
+        "label": "Rank conferred",
+        "type": "select",
+        "options": [
+          "Unblooded",
+          "Young Blood",
+          "Blooded",
+          "Elite",
+          "Elder",
+          "Leader",
+          "Ancient"
+        ],
+        "required": true
+      },
+      {
+        "key": "date",
+        "label": "Real-world date",
+        "type": "date"
+      },
+      {
+        "key": "era",
+        "label": "In-character date / expedition",
+        "type": "text"
+      },
+      {
+        "key": "hunt",
+        "label": "Earned through undertaking",
+        "type": "ref",
+        "ref": "hunts"
+      },
+      {
+        "key": "grounds",
+        "label": "Grounds",
+        "type": "textarea"
+      },
+      {
+        "key": "source",
+        "label": "Source URL",
+        "type": "url"
+      }
+    ]
+  },
+  "glossary": {
+    "title": "Glossary",
+    "sheet": "",
+    "prefix": "GLS",
+    "added": "202610030001",
+    "fields": [
+      {
+        "key": "name",
+        "label": "Term",
+        "type": "text",
+        "required": true
+      },
+      {
+        "key": "meaning",
+        "label": "Working meaning",
+        "type": "text",
+        "required": true
+      },
+      {
+        "key": "status",
+        "label": "Standing",
+        "type": "select",
+        "options": [
+          "Provisional",
+          "In clan use",
+          "Disputed"
+        ],
+        "required": true
+      },
+      {
+        "key": "category",
+        "label": "Category",
+        "type": "text"
+      },
+      {
+        "key": "usage",
+        "label": "Usage notes",
+        "type": "textarea"
+      },
+      {
+        "key": "doc",
+        "label": "Related document",
+        "type": "ref",
+        "ref": "library"
+      },
+      {
+        "key": "source",
+        "label": "Source URL",
         "type": "url"
       }
     ]
