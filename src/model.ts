@@ -37,6 +37,7 @@ export function validate(kind: Kind, row: RecordData, data: Dataset): string[] {
  // Elder, Clan Leader and Ancient are conferred by the clan and the Council, not earned through a single undertaking.
  if(kind==='promotions'&&row.hunt&&standingConferred(row))errors.push('Senior standing is conferred, not earned through an undertaking. Clear “Earned through undertaking”.');
  if(kind==='promotions'&&row.hunt){const hunt=data.hunts.find(h=>h.id===row.hunt);if(hunt&&hunt.hunter!==row.member)errors.push('The undertaking belongs to a different hunter.');}
+ if(kind==='trophies'&&row.hunt&&!row.archived){const hunt=data.hunts.find(h=>h.id===row.hunt);if(hunt&&hunt.hunter!==row.hunter)errors.push('The undertaking belongs to a different hunter.');if(hunt&&hunt.review!=='Accepted')errors.push('Only an undertaking whose claim was judged Accepted can supply a trophy.');}
  return errors;
 }
 export function parseWorkbook(raw: Record<string, unknown[][]>): {data: Dataset; issues: string[]} {
@@ -137,3 +138,6 @@ export function searchArchive(query:string,data:Dataset,limit=30):SearchHit[]{
 
 /** Trophies whose claim was judged Accepted. Completed hunts with a pending or rejected claim are not trophies. */
 export const acceptedTrophies=(data:Dataset,filter:(hunt:RecordData)=>boolean=()=>true)=>active(data.hunts).filter(h=>h.review==='Accepted'&&String(h.trophy||'').trim()&&filter(h)).sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))||String(a.name).localeCompare(String(b.name)));
+
+/** Trophy hall entries in display order, then newest first. An entry citing an undertaking is shown only while that claim stays Accepted for the same hunter. */
+export const hallTrophies=(data:Dataset,filter:(trophy:RecordData)=>boolean=()=>true)=>active(data.trophies).filter(t=>{const hunt=t.hunt&&data.hunts.find(h=>h.id===t.hunt);return (!hunt||(hunt.review==='Accepted'&&hunt.hunter===t.hunter))&&filter(t);}).sort((a,b)=>order(a.order)-order(b.order)||String(b.date||'').localeCompare(String(a.date||''))||String(a.name).localeCompare(String(b.name)));

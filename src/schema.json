@@ -383,6 +383,91 @@
       }
     ]
   },
+  "trophies": {
+    "title": "Trophy hall",
+    "sheet": "",
+    "prefix": "TRP",
+    "added": "202610070001",
+    "fields": [
+      {
+        "key": "name",
+        "label": "Trophy",
+        "type": "text",
+        "required": true
+      },
+      {
+        "key": "description",
+        "label": "What it is",
+        "type": "textarea",
+        "required": true
+      },
+      {
+        "key": "hunter",
+        "label": "Hunted or earned by",
+        "type": "ref",
+        "ref": "members",
+        "required": true
+      },
+      {
+        "key": "origin",
+        "label": "How it was earned",
+        "type": "select",
+        "options": [
+          "Taken on a hunt",
+          "Awarded",
+          "Gifted",
+          "Inherited"
+        ],
+        "required": true
+      },
+      {
+        "key": "hunt",
+        "label": "Undertaking",
+        "type": "ref",
+        "ref": "hunts"
+      },
+      {
+        "key": "quarry",
+        "label": "Taken from",
+        "type": "text"
+      },
+      {
+        "key": "date",
+        "label": "Real-world date",
+        "type": "date"
+      },
+      {
+        "key": "era",
+        "label": "In-character date / expedition",
+        "type": "text"
+      },
+      {
+        "key": "significance",
+        "label": "Why it is kept",
+        "type": "textarea"
+      },
+      {
+        "key": "kept",
+        "label": "Where it is kept",
+        "type": "text"
+      },
+      {
+        "key": "order",
+        "label": "Display order",
+        "type": "number"
+      },
+      {
+        "key": "image",
+        "label": "Image URL",
+        "type": "url"
+      },
+      {
+        "key": "source",
+        "label": "Source URL",
+        "type": "url"
+      }
+    ]
+  },
   "chronicle": {
     "title": "History",
     "sheet": "History",

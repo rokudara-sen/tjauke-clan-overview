@@ -39,6 +39,7 @@ For the local workbook preview, set `VITE_LOCAL_SNAPSHOT=true` and place the bou
 11. Run `supabase/migrations/202610040001_standing.sql` once. It separates warrior caste rank (Unblooded to Elite) from senior standing (Elder, Clan Leader, Ancient). Hunters ranked Elder, Leader or Ancient keep that as standing and their warrior rank becomes unrecorded; set it on the hunter record in administration.
 12. Run `supabase/migrations/202610050001_household_seniors.sql` once. It makes the Household senior duty the only place a household senior is recorded (see below), and removes anonymous access to functions meant for signed-in accounts.
 13. Run `supabase/migrations/202610060001_standing_not_earned.sql` once. Records conferring Elder, Clan Leader or Ancient standing can no longer cite an undertaking: senior standing is conferred, not earned through one hunt. Existing records are left as they are until next edited.
+14. Run `supabase/migrations/202610070001_trophies.sql` once. It adds the trophy hall. Until it runs, the Trophy hall page shows no trophies and saving a trophy hall record fails.
 
 ### Household seniors
 
@@ -68,6 +69,8 @@ Messages are not kept: anything older than the retention period (30 days by defa
 - **Witnesses.** Naming or changing an undertaking's witness sets *Witness confirmation* to Requested; the witness confirms or declines from their account until the undertaking is judged. Witnesses recorded before this existed are left unanswered rather than assumed confirmed.
 - **Advancement suggestions.** Accepted blooding rites by hunters not yet Blooded, without an advancement citing them, appear for administrators with a pre-filled Blooded entry, or *Not an advancement* to stop suggesting it. Personal and training hunts never suggest one, and nothing suggests senior standing.
 - **Trophies.** Undertakings, hunter profiles and households list trophies from claims judged Accepted only.
+- **Trophy hall.** A curated gallery at `#/trophies` of the trophies the clan chooses to display, added under the *Trophy hall* record type: what it is, who took or earned it, how (taken on a hunt, awarded, gifted or inherited), the quarry, the undertaking, when, where it is kept, why it is kept and an optional image URL. The lowest *Display order* leads the page. An entry citing an undertaking must be that hunter's accepted claim; the database refuses anything else, and an entry whose claim is later rejected drops out of the hall. Hunter profiles and undertakings link to their entries.
+- **Sidebar groups.** Hunters, Households and Duties sit under Clan; Undertakings and Trophy hall under Hunts; History, Documents and Glossary under Records. The group holding the current page opens; the others open and close from their heading.
 - **Portraits.** A linked hunter uploads a JPEG, PNG or WebP image up to 2 MB into a private bucket. An administrator approves it, which copies it into the public bucket and sets the hunter's portrait, or rejects it, which deletes it.
 - **Glossary suggestions.** Approved accounts suggest terms from their account page. They arrive as provisional drafts (at most five waiting per account) for an administrator to publish under the Glossary record type.
 - **Recent changes.** The overview lists recently changed published records with the kind of change and date only, never the reason or who made it.
