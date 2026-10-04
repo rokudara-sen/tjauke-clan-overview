@@ -38,8 +38,12 @@ export function validate(kind: Kind, row: RecordData, data: Dataset): string[] {
  if(kind==='promotions'&&row.hunt&&standingConferred(row))errors.push('Senior standing is conferred, not earned through an undertaking. Clear “Earned through undertaking”.');
  if(kind==='promotions'&&row.hunt){const hunt=data.hunts.find(h=>h.id===row.hunt);if(hunt&&hunt.hunter!==row.member)errors.push('The undertaking belongs to a different hunter.');}
  if(kind==='trophies'&&row.hunt&&!row.archived){const hunt=data.hunts.find(h=>h.id===row.hunt);if(hunt&&hunt.hunter!==row.hunter)errors.push('The undertaking belongs to a different hunter.');if(hunt&&hunt.review!=='Accepted')errors.push('Only an undertaking whose claim was judged Accepted can supply a trophy.');}
+ if(kind==='library'&&!String(row.body??'').trim()&&!String(row.url??'').trim())errors.push('Add the document text or an external copy.');
  return errors;
 }
+export type DocumentBlock={kind:'heading'|'quote'|'paragraph';text:string};
+/** Document text as written in administration: each line is a paragraph, `## ` starts a section, `> ` sets a line apart as a quotation. */
+export const documentBlocks=(text:unknown):DocumentBlock[]=>String(text??'').split(/\r?\n/).map(l=>l.trim()).filter(Boolean).map(l=>/^#{1,3}\s/.test(l)?{kind:'heading',text:l.replace(/^#+\s+/,'')}:l.startsWith('>')?{kind:'quote',text:l.replace(/^>\s*/,'')}:{kind:'paragraph',text:l});
 export function parseWorkbook(raw: Record<string, unknown[][]>): {data: Dataset; issues: string[]} {
  const data=emptyData(),issues:string[]=[];
  for(const k of kinds){const grid=raw[k];if(!grid){if(!schemas[k].added)issues.push(`Missing source table: ${k}`);continue;}const headers=grid[0].map(normalize);

@@ -41,6 +41,11 @@ For the local workbook preview, set `VITE_LOCAL_SNAPSHOT=true` and place the bou
 13. Run `supabase/migrations/202610060001_standing_not_earned.sql` once. Records conferring Elder, Clan Leader or Ancient standing can no longer cite an undertaking: senior standing is conferred, not earned through one hunt. Existing records are left as they are until next edited.
 14. Run `supabase/migrations/202610070001_trophies.sql` once. It adds the trophy hall. Until it runs, the Trophy hall page shows no trophies and saving a trophy hall record fails.
 15. Run `supabase/migrations/202610080001_taken_hunters.sql` once. Registration then no longer offers hunters that already have a linked account, and the database drops such a request if one is sent anyway. Until it runs, registration offers every hunter as before; approval still refuses to link a hunter twice.
+16. Run `supabase/migrations/202610090001_document_text.sql` once. Documents can then carry their text and are read on the site at `#/library/<ID>`; the external link becomes optional, and a document needs at least one of the two. Existing linked documents are unchanged.
+
+### Documents
+
+Write or paste a document's text into *Document text* under the Documents record type. Each line is a paragraph; a line starting with `## ` is a section heading, listed in the document's contents, and a line starting with `> ` is set apart as a quotation. A document with text opens on the site; one with only an *External copy* opens that link, as before.
 
 ### Household seniors
 

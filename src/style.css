@@ -507,3 +507,23 @@ label .term-note{display:inline;margin-left:8px}
 .trophy-card .tag{display:block;margin-top:8px;text-align:left;white-space:normal}
 @media(max-width:700px){.trophy-featured{grid-template-columns:1fr;gap:20px;padding-bottom:32px;margin-bottom:32px}.trophy-grid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:24px 16px}.nav-heading{padding:10px 16px 10px 28px}}
 @media print{.trophy-frame:before,.trophy-frame:after{border-color:var(--text)}.trophy-card,.trophy-featured{break-inside:avoid}}
+
+/* Documents read on the site */
+.document{margin-top:40px;padding-top:32px;border-top:1px solid var(--line-strong)}
+.document.with-contents{display:grid;grid-template-columns:200px minmax(0,1fr);gap:48px;align-items:start}
+.document-contents{position:sticky;top:96px}
+.document-contents ol{list-style:none;margin:12px 0 0;padding:0;counter-reset:section}
+.document-contents li{counter-increment:section;border-left:1px solid var(--line);padding:6px 0 6px 14px}
+.document-contents li:hover{border-left-color:var(--accent)}
+.document-contents .text-button{font-size:var(--fs-2);color:var(--text-2);line-height:1.35}
+.document-contents .text-button:before{content:counter(section,decimal-leading-zero) ' ';font-family:var(--mono);font-size:var(--fs-1);color:var(--text-3)}
+.document-text{max-width:68ch}
+.document-text p{color:var(--text);line-height:1.75;margin-bottom:1.1em}
+.document-text h2{font-size:var(--fs-5);margin:48px 0 20px;padding-bottom:12px;border-bottom:1px solid var(--line-strong);position:relative;scroll-margin-top:96px}
+.document-text h2:after{content:'';position:absolute;left:0;bottom:-2px;width:48px;height:3px;background:var(--accent)}
+.document-text h2:first-child{margin-top:0}
+.document-text blockquote{margin:0 0 28px;padding:4px 0 4px 18px;border-left:3px solid var(--accent);font-family:var(--display);font-size:var(--fs-4);font-weight:600;line-height:1.35;color:var(--text);text-wrap:balance}
+.document-text blockquote:last-child{margin:48px 0 0}
+.document-input{font-family:var(--mono);font-size:var(--fs-2)!important;min-height:360px!important}
+@media(max-width:900px){.document.with-contents{grid-template-columns:minmax(0,1fr);gap:28px}.document-contents{position:static}}
+@media print{.document-contents{display:none}.document.with-contents{display:block}.document-text{max-width:none}.document-text h2{break-after:avoid}.document-text p{color:var(--text)}}

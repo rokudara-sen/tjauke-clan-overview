@@ -18,7 +18,7 @@ The user explicitly rejected a lightly restyled dashboard and requested an almos
 
 - GitHub Pages hosts the React frontend.
 - Supabase stores persistent records and handles administrator authentication and authorization.
-- Google Docs remain the home of long documents; the website stores titles, shelves, abstracts, reading order and document links.
+- Long documents are read on the website itself (4 October 2026 decision, replacing Google Docs links): the document record holds its text alongside title, shelf, abstract and reading order. An external link is optional.
 - Google Sheets and Apps Script are retired after successful migration and validation. Do not delete or modify the original workbook as part of building the replacement.
 - Build and test locally first. Clearly distinguish a local working preview from a published, configured website.
 - No Supabase project, credentials, administrator account, deployment workflow or live website was established in the previous chat. Those remain setup tasks. Ask for genuinely missing setup information while continuing independent frontend work.
@@ -71,7 +71,7 @@ Yautja clans and outsider factions are distinct categories. Do not assume any ca
 
 ### Documents
 
-Document title, shelf, numeric reading order, abstract, exact Google Docs URL. Shelf filters come from real data. Open the URL belonging to that record, not the first matching docs.google.com URL. Google Docs sharing permissions remain independent of the website. Do not embed entire previous lore documents in frontend source code.
+Document title, shelf, numeric reading order, abstract, document text read on the site, and an optional external copy URL. Shelf filters come from real data. Open the URL belonging to that record, not the first matching docs.google.com URL. Document text lives in the database, entered through administration; do not embed lore documents in frontend source code.
 
 ## Administrator experience and automation
 

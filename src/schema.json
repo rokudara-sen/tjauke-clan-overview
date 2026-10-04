@@ -642,10 +642,15 @@
         "type": "textarea"
       },
       {
+        "key": "body",
+        "label": "Document text",
+        "type": "document"
+      },
+      {
         "key": "url",
-        "label": "Document URL",
-        "type": "url",
-        "required": true
+        "label": "External copy",
+        "legacy": "Document URL",
+        "type": "url"
       }
     ]
   },

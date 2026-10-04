@@ -7,6 +7,7 @@ export function FieldInput({field:f,row,setRow,data,options}:{field:Field;row:Re
   {f.ref?<select value={value} required={f.required} onChange={e=>set(e.target.value)}><option value="">Not assigned</option>{data[f.ref].filter(r=>!r.archived||r.id===row[f.key]).map(r=><option value={r.id} key={r.id}>{r.name}{r.archived?' (archived)':''}</option>)}</select>
   :f.type==='select'?<select required={f.required} value={value} onChange={e=>set(e.target.value)}><option value="">Select…</option>{(options||f.options)?.map(o=><option key={o}>{o}</option>)}</select>
   :f.type==='textarea'?<textarea rows={5} required={f.required} value={value} onChange={e=>set(e.target.value)}/>
+  :f.type==='document'?<><textarea className="document-input" rows={18} required={f.required} value={value} onChange={e=>set(e.target.value)} aria-describedby={`${f.key}-note`}/><small id={`${f.key}-note`} className="field-note">Each line is a paragraph. Start a line with ## for a section heading, or &gt; to set it apart as a quotation.</small></>
   :<input type={['number','date','url'].includes(f.type)?f.type:'text'} step={f.type==='number'?'any':undefined} required={f.required} value={value} onChange={e=>set(e.target.value)}/>}
  </label>;
 }
