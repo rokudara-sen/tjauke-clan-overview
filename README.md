@@ -42,6 +42,7 @@ For the local workbook preview, set `VITE_LOCAL_SNAPSHOT=true` and place the bou
 14. Run `supabase/migrations/202610070001_trophies.sql` once. It adds the trophy hall. Until it runs, the Trophy hall page shows no trophies and saving a trophy hall record fails.
 15. Run `supabase/migrations/202610080001_taken_hunters.sql` once. Registration then no longer offers hunters that already have a linked account, and the database drops such a request if one is sent anyway. Until it runs, registration offers every hunter as before; approval still refuses to link a hunter twice.
 16. Run `supabase/migrations/202610090001_document_text.sql` once. Documents can then carry their text and are read on the site at `#/library/<ID>`; the external link becomes optional, and a document needs at least one of the two. Existing linked documents are unchanged.
+17. Run `supabase/migrations/202610100001_chronicle_honor_code.sql` once. It revises the Living Chronicle (`DOC-2F08DD45-B36`) so the Measure of Prey sits above Honor Code worthiness instead of beside it, the Quarry Must Know is a stalking rule rather than a duel, and synthetics are respected without becoming huntable. It replaces 15 whole paragraphs, found by their opening words, and stops without changing anything if one is missing. Running it again changes nothing.
 
 ### Documents
 
