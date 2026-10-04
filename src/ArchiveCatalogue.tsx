@@ -42,7 +42,7 @@ function Cover({index,data,ready,status,phase,dir}:{index:number;data:Dataset;re
 export function ArchiveCatalogue({data,status}:{data:Dataset;status:string}){
  const ready=status==='ready';
  const [selected,setSelected]=useState(0),[leaving,setLeaving]=useState<{index:number;dir:number;key:number}|null>(null),[dir,setDir]=useState(1);
- const root=useRef<HTMLElement>(null),lastWheel=useRef(0),current=useRef(0),stamp=useRef(0),mark=useRef<HTMLElement>(null),[struck,setStruck]=useState(false);
+ const root=useRef<HTMLElement>(null),current=useRef(0),stamp=useRef(0),mark=useRef<HTMLElement>(null),[struck,setStruck]=useState(false);
  // A star arriving here lands on the section number in the heading.
  useEffect(()=>setDock({point:()=>{const r=mark.current?.getBoundingClientRect();return r&&r.width?{x:r.left-10,y:r.top+r.height/2}:null;},land:()=>setStruck(true)}),[]);
  const rows=rowsOf(selected,data),count=useTicker(ready?rows.length:0);
@@ -51,13 +51,18 @@ export function ArchiveCatalogue({data,status}:{data:Dataset;status:string}){
   setLeaving({index:current.current,dir:direction,key:++stamp.current});setDir(direction);current.current=n;setSelected(n);};
  const step=(n:number)=>go(current.current+n,n>0?1:-1);
  useEffect(()=>{if(!leaving)return;const t=setTimeout(()=>setLeaving(l=>l&&l.key===leaving.key?null:l),reducedMotion()?0:600);return()=>clearTimeout(t);},[leaving]);
- useEffect(()=>{const el=root.current!;const onWheel=(e:WheelEvent)=>{if(innerHeight<700)return;e.preventDefault();if(Math.abs(e.deltaY)<4||Date.now()-lastWheel.current<420)return;lastWheel.current=Date.now();step(e.deltaY>0?1:-1);};el.addEventListener('wheel',onWheel,{passive:false});return()=>el.removeEventListener('wheel',onWheel);},[]);
+ // One wheel gesture moves one section. A trackpad swipe keeps sending events while it coasts, so a gesture
+ // ends only after a short pause, and a long swipe never skips past several sections.
+ useEffect(()=>{const el=root.current!;let sum=0,spent=false,pause=0;
+  const onWheel=(e:WheelEvent)=>{if(innerHeight<700)return;e.preventDefault();clearTimeout(pause);pause=window.setTimeout(()=>{sum=0;spent=false;},220);
+   if(spent)return;sum+=e.deltaY*(e.deltaMode===1?30:1);if(Math.abs(sum)<40)return;spent=true;step(sum>0?1:-1);};
+  el.addEventListener('wheel',onWheel,{passive:false});return()=>{clearTimeout(pause);el.removeEventListener('wheel',onWheel);};},[]);
  const e=entries[selected];
  return <section ref={root} className="archive-catalogue" style={{['--index' as string]:selected}} aria-label="Browse archive sections" tabIndex={0} onKeyDown={ev=>{if(ev.target!==ev.currentTarget)return;if(['ArrowDown','ArrowRight','ArrowUp','ArrowLeft'].includes(ev.key)){ev.preventDefault();step(ev.key==='ArrowDown'||ev.key==='ArrowRight'?1:-1);}}}>
   <Cosmos intensity={.6}/>
   <div className="catalogue-ruler ruler-top" aria-hidden="true"/><div className="catalogue-ruler ruler-left" aria-hidden="true"/>
   <div className="catalogue-ghost" aria-hidden="true" key={`g${selected}`} style={{['--dir' as string]:dir}}>{pad(selected+1)}</div>
-  <div className="catalogue-heading"><h1>Archive</h1><span ref={mark} className={struck?'is-struck':undefined}><b key={selected}>{pad(selected+1)}</b> / {pad(entries.length)} sections</span></div>
+  <div className="catalogue-heading"><h1>Catalogue</h1><span ref={mark} className={struck?'is-struck':undefined}><b key={selected}>{pad(selected+1)}</b> / {pad(entries.length)} sections</span></div>
   <div className="catalogue-axis axis-x" aria-hidden="true"/><div className="catalogue-axis axis-y" aria-hidden="true"/>
   <div className="catalogue-stage">
    <div className="catalogue-description" aria-live="polite" key={`d${selected}`}><span>[ SECTION {pad(selected+1)} ]</span><h2>{e.title}</h2><small>{e.kind?(ready?`${count} published ${rows.length===1?'record':'records'}`:status==='loading'?'Loading records…':'Records unavailable'):'Community discussion'}</small></div>
@@ -68,6 +73,6 @@ export function ArchiveCatalogue({data,status}:{data:Dataset;status:string}){
    <div className="catalogue-list" aria-label="Section selector">{entries.map((entry,i)=><button type="button" key={entry.route} aria-pressed={i===selected} onClick={()=>go(i,i>selected?1:-1)}>{entry.title}</button>)}</div>
   </div>
   <button className="catalogue-prev" type="button" onClick={()=>step(-1)}>← Previous</button><button className="catalogue-next" type="button" onClick={()=>step(1)}>Next →</button>
-  <div className="catalogue-bottom"><a href={href('dashboard')}>← Return home</a><span>Scroll to browse · Select to open</span></div>
+  <div className="catalogue-bottom"><a href={href('dashboard')}>← Return home</a><span>One section at a time<span className="catalogue-keys"> · Scroll or use the arrow keys</span> · Select the cover to open</span></div>
  </section>;
 }

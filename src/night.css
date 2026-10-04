@@ -5,14 +5,14 @@
 .archive-page{--bg:#0a0b0a;--surface:transparent;--surface-2:transparent;--surface-3:#e6e2d508;--well:transparent;--line:#e6e2d512;--line-strong:#e6e2d526;--line-hover:#e6e2d560;--text:#ece8db;--text-2:#b6b2a5;--text-3:#827f75;--accent:#e2402b;--accent-strong:#b8321f;--accent-ink:#fff6ee;background:#0a0b0a;isolation:isolate}
 .archive-page .layout{position:relative;z-index:1}
 .archive-page .topbar{position:relative;z-index:6;background:transparent;border:0}
-.archive-page footer{position:relative;z-index:1;color:var(--text-3);font:10px var(--mono);letter-spacing:.06em;text-transform:uppercase;border-top:1px solid var(--line);padding-block:22px}
+.archive-page footer{position:relative;z-index:1;color:var(--text-3);font:11px var(--mono);letter-spacing:.06em;text-transform:uppercase;border-top:1px solid var(--line);padding-block:22px}
 
 /* The room: three drifting star layers. */
 .night-sky{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none}
 .fx-layer{position:fixed;inset:0;width:100vw;height:100vh;z-index:80;pointer-events:none}
 
 /* Headings rise out of a clip; the rule beneath draws itself. */
-.archive-page .page-location{font:10px var(--mono);letter-spacing:.16em;color:var(--text-3);display:flex;align-items:center;gap:10px}
+.archive-page .page-location{font:11px var(--mono);letter-spacing:.16em;color:var(--text-3);display:flex;align-items:center;gap:10px}
 .archive-page .page-location{min-height:14px}
 /* The page's star: unlit until the travelling star lands in it, then it flares and keeps a steady glow. */
 .page-star{position:relative;display:inline-block;width:6px;height:6px;margin-right:4px;background:#e6e2d540;flex:none;transition:background .3s,box-shadow .3s,transform .3s cubic-bezier(.34,1.56,.64,1)}
@@ -46,18 +46,18 @@
 .archive-page :is(.panel,.state)::before{left:0;border-left:1px solid var(--text-2)}.archive-page :is(.panel,.state)::after{right:0;border-right:1px solid var(--text-2)}
 .archive-page .section-heading{border-top-color:var(--line-strong)}
 .archive-page .section-heading:before{width:5px;height:5px;top:-3px;background:var(--text);clip-path:none;box-shadow:0 0 8px #fff9}
-.archive-page .section-heading h2,.archive-page .panel>h2{font:900 clamp(18px,1.6vw,24px)/1.1 'Arial Black','Archivo',sans-serif;letter-spacing:-.04em;text-transform:uppercase}
-.archive-page .section-heading>a{font:10px var(--mono);letter-spacing:.12em;text-transform:uppercase}
+.archive-page .section-heading h2,.archive-page .panel>h2{font:700 expanded clamp(18px,1.6vw,24px)/1.1 var(--display);letter-spacing:-.04em;text-transform:uppercase}
+.archive-page .section-heading>a{font:11px var(--mono);letter-spacing:.12em;text-transform:uppercase}
 .archive-page .notice{background:transparent;border-left:1px solid var(--accent);font:12px/1.6 var(--mono);color:var(--text-2)}
 .archive-page .eyebrow,.archive-page thead th,.archive-page .record-view dt,.archive-page .record-id{letter-spacing:.14em;color:var(--text-3)}
 
 /* Buttons become annotations that invert when targeted. */
-.archive-page :is(button:not(.text-button):not(.stance),.button-link){--fill:transparent;--edge:var(--line-strong);--cut:0px;font:500 10px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;padding:12px 18px;color:var(--text);transition:color .25s}
+.archive-page :is(button:not(.text-button):not(.stance),.button-link){--fill:transparent;--edge:var(--line-strong);--cut:0px;font:500 11px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;padding:12px 18px;color:var(--text);transition:color .25s}
 .archive-page :is(button:not(.text-button):not(.stance),.button-link):hover{--fill:var(--text);--edge:var(--text);color:#0a0b0a;text-decoration:none}
 .archive-page .primary{--fill:var(--text)!important;--edge:var(--text)!important;color:#0a0b0a!important}
 .archive-page .primary:hover{--fill:var(--accent)!important;--edge:var(--accent)!important;color:#fff!important}
 .archive-page :is(button,.button-link):disabled{opacity:.4}
-.archive-page .text-button{font:10px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--text-2);text-decoration:underline;text-underline-offset:5px}
+.archive-page .text-button{font:11px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--text-2);text-decoration:underline;text-underline-offset:5px}
 .archive-page .document-contents .text-button{text-decoration:none;line-height:1.6}.archive-page .document-contents li:hover .text-button{color:var(--text)}
 .archive-page .overview-mode{border:0;padding:0;gap:18px}.archive-page .overview-mode button{--edge:transparent;padding:6px 0;color:var(--text-3)}.archive-page .overview-mode button[aria-pressed=true]{--fill:transparent;background:transparent;color:var(--text);box-shadow:inset 0 -1px var(--text)}
 .archive-page .overview-mode button:hover{--fill:transparent;color:var(--text)}
@@ -69,7 +69,7 @@
 .archive-page select{appearance:none;padding-right:22px;background-image:linear-gradient(var(--accent),var(--accent)),linear-gradient(45deg,transparent 50%,var(--text-2) 50%),linear-gradient(-45deg,transparent 50%,var(--text-2) 50%);background-size:0 1px,5px 5px,5px 5px;background-position:0 100%,calc(100% - 9px) 55%,calc(100% - 4px) 55%}
 .archive-page select:focus{background-size:100% 1px,5px 5px,5px 5px}
 .archive-page select option{background:#0a0b0a;color:var(--text)}
-.archive-page label{font:10px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--text-3)}
+.archive-page label{font:11px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--text-3)}
 .archive-page input::placeholder,.archive-page textarea::placeholder{color:#5f5c55}
 .archive-page .filters{background:transparent;border:0;border-block:1px solid var(--line);padding:22px 0}
 
@@ -79,7 +79,7 @@
 .archive-page .record-list li:hover:before{background:#fff;box-shadow:0 0 10px #fff,0 0 2px #fff;transform:scale(1.6)}
 .archive-page .record-list li:hover{background:linear-gradient(90deg,#e6e2d50a,transparent 60%)}
 .archive-page .record-title{font-weight:600;letter-spacing:-.01em}
-.archive-page .tag{font:10px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--text-3);border:1px solid var(--line-strong);padding:3px 7px}
+.archive-page .tag{font:11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--text-3);border:1px solid var(--line-strong);padding:3px 7px}
 .archive-page th,.archive-page td{border-bottom-color:var(--line)}
 .archive-page .roster tbody tr{transition:background .3s}.archive-page .roster tbody tr:hover{background:#e6e2d508}
 
@@ -90,14 +90,14 @@
 .archive-page .hunter-monogram{background:#0d0e0c}
 .archive-page .hunter-monogram span{color:transparent;background-image:radial-gradient(circle,#e6e2d5 .9px,transparent 1.3px);background-size:5px 5px;-webkit-background-clip:text;background-clip:text;opacity:.75;transition:opacity .4s,transform .8s cubic-bezier(.2,.8,.2,1)}
 .archive-page .hunter-card:hover .hunter-monogram span{opacity:1;transform:scale(1.06)}
-.archive-page .hunter-status{font:9px var(--mono);letter-spacing:.12em;text-transform:uppercase;background:transparent;border:1px solid var(--line-strong);color:var(--text-2)}
+.archive-page .hunter-status{font:11px var(--mono);letter-spacing:.12em;text-transform:uppercase;background:transparent;border:1px solid var(--line-strong);color:var(--text-2)}
 .archive-page .hunter-arrow{background:transparent;color:var(--text);border:1px solid var(--line-hover)}
 .archive-page .hunter-card:hover .hunter-arrow{background:var(--accent);border-color:var(--accent)}
-.archive-page .hunter-card h2{font:900 26px/1 'Arial Black','Archivo',sans-serif;letter-spacing:-.05em}
+.archive-page .hunter-card h2{font:700 expanded 26px/1 var(--display);letter-spacing:-.05em}
 
 /* Politics: stances read as outlined marks; colour stays only on the edge and the text. */
-.archive-page .stance{--fill:transparent;--cut:0px;font:500 10px var(--mono);letter-spacing:.12em;text-transform:uppercase}
-.archive-page .matrix .stance{font:500 10px var(--mono)}
+.archive-page .stance{--fill:transparent;--cut:0px;font:500 11px var(--mono);letter-spacing:.12em;text-transform:uppercase}
+.archive-page .matrix .stance{font:500 11px var(--mono)}
 .archive-page .stance-unknown{--edge:#e6e2d51c;color:var(--text-3)}
 .archive-page .stance-neutral{--edge:#e6e2d540;color:var(--text-2)}
 .archive-page .stance-hostile{--edge:#93463a;color:#ef9f8e}.archive-page .stance-war{--edge:var(--accent);color:#ffc0b2}
@@ -107,7 +107,7 @@
 
 /* Overview figures. */
 .archive-page .overview-metrics{border-color:var(--line-strong)}.archive-page .overview-metrics a{border-right-color:var(--line)}
-.archive-page .overview-metrics strong{font-family:'Arial Black','Archivo',sans-serif;letter-spacing:-.06em}
+.archive-page .overview-metrics strong{font-family:var(--display);font-stretch:125%;font-weight:700;letter-spacing:-.06em}
 .archive-page .overview-metrics a:hover strong{color:#fff;text-shadow:0 0 24px #ffd9a655}
 
 /* Timeline marks are stars. */
@@ -115,7 +115,7 @@
 
 /* Sign in and the other forms sit in a ticked frame. */
 .archive-page .login{position:relative}
-.archive-page .login h2{font:900 28px/1 'Arial Black','Archivo',sans-serif;letter-spacing:-.05em;text-transform:uppercase}
+.archive-page .login h2{font:700 expanded 28px/1 var(--display);letter-spacing:-.05em;text-transform:uppercase}
 
 /* Index: the archive as a night sky of links. */
 .archive-index{background:#0a0b0a;color:#ece8db}
@@ -137,7 +137,7 @@
 /* Search: a full-width sight line with results as stars. */
 .site-shell .search{background:#0a0b0a;border:0;border-bottom:1px solid #e6e2d526;color:#ece8db;width:100vw;max-width:none;margin:0;inset:0 0 auto;padding:28px 6vw 22px;max-height:80dvh}
 .site-shell .search::backdrop{background:#0a0b0ad9}
-.site-shell .search-field input{font:900 clamp(26px,4vw,54px)/1.1 'Arial Black','Archivo',sans-serif;letter-spacing:-.05em;background:transparent;border:0;border-bottom:1px solid #e6e2d526;box-shadow:none;padding:8px 0;color:#ece8db}
+.site-shell .search-field input{font:700 expanded clamp(26px,4vw,54px)/1.1 var(--display);letter-spacing:-.05em;background:transparent;border:0;border-bottom:1px solid #e6e2d526;box-shadow:none;padding:8px 0;color:#ece8db}
 .site-shell .search-field input:focus{border-bottom-color:#e2402b;box-shadow:none}
 .site-shell .search-field input::placeholder{color:#4d4b45}
 .site-shell .search li a{position:relative;padding-left:20px}
@@ -151,7 +151,7 @@
 .archive-page :is(button:not(.text-button),.button-link,.stance)::before,.archive-page :is(button:not(.text-button),.button-link,.stance)::after{display:none}
 .archive-page :is(button:not(.text-button),.button-link,.stance){border:1px solid var(--edge);background:var(--fill);transition:color .25s,background-color .25s,border-color .25s}
 .archive-page .overview-mode button{border:0!important;background:transparent!important}
-.archive-page .topbar :is(.search-button,.menu,button){border:0!important;background:none!important;padding:4px 0!important;font:12px Arial,sans-serif!important;letter-spacing:.025em!important;color:var(--text)!important}
+.archive-page .topbar :is(.search-button,.menu,button){border:0!important;background:none!important;padding:4px 0!important;font:12px 'Archivo',sans-serif!important;letter-spacing:.025em!important;color:var(--text)!important}
 /* The archive heading takes a landing star as a brief flare before its section number. */
 .catalogue-heading>span{position:relative}
 .catalogue-heading>span.is-struck:before{content:'';position:absolute;left:-13px;top:50%;width:5px;height:5px;margin-top:-2.5px;background:#fff8ec;box-shadow:0 0 6px #fff,0 0 14px #ffd9a688}
@@ -181,7 +181,7 @@ html[data-vt]:not([data-vt=open])::view-transition-old(root){z-index:1}
 html[data-vt]:not([data-vt=open])::view-transition-old(root){background:#0a0b0a}
 /* Dialog backdrops darken as the dialog bursts open and clear as it collapses, instead of switching in one frame. */
 .site-shell dialog::backdrop{opacity:1;transition:opacity .5s cubic-bezier(.2,.8,.2,1)}
-.site-shell dialog.is-closing::backdrop{opacity:0;transition-duration:.42s;transition-timing-function:cubic-bezier(.4,0,.6,1)}
+.site-shell dialog.is-closing::backdrop{opacity:0;transition-duration:.3s;transition-timing-function:cubic-bezier(.4,0,.6,1)}
 @starting-style{.site-shell dialog[open]::backdrop{opacity:0}}
 /* The map comes up quickly enough to meet a returning star. */
 .star-map .star-canvas,.star-map .star-destinations{animation-duration:.8s}

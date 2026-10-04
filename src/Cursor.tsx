@@ -2,8 +2,9 @@ import { useEffect, useRef } from 'react';
 import { follow, reducedMotion } from './gl';
 
 /**
- * The pointer as a hunter's targeting laser. Three red dots circle the pointer at different lags, like the
- * tri-laser sight; over anything interactive they leave the pointer and four brackets lock onto the target's edges.
+ * The pointer as a hunter's targeting laser. Three red dots hold a triangle around the pointer and trail it at
+ * different lags, like the tri-laser sight; over controls they draw in and four brackets lock onto the control's edges.
+ * It stays quiet while reading: the dots do not spin, and links within text do not draw the brackets.
  * Only for fine pointers; touch keeps the platform behaviour and text fields keep the text cursor.
  */
 export function Cursor(){
@@ -17,7 +18,8 @@ export function Cursor(){
    const t=e.target as HTMLElement;
    const text=t.closest?.('input:not([type=checkbox]):not([type=radio]):not([type=submit]):not([type=button]),textarea,[contenteditable=true],select');
    el.dataset.state=text?'text':'';
-   target=text?null:t.closest?.('a,button,[role=button],summary,label,[data-cursor]')||null;};
+   const hit=text?null:t.closest?.('a,button,[role=button],summary,label,[data-cursor]')||null;
+   target=hit&&hit.matches('#main a')&&hit.closest('p,dd,td,li,blockquote,.prose,.document-text')?null:hit;};
   const down=()=>{pressed=true;el.classList.add('is-pressed');},up=()=>{pressed=false;el.classList.remove('is-pressed');};
   const leave=()=>{el.style.opacity='0';seen=false;},enter=()=>{el.style.opacity='1';};
   addEventListener('pointermove',move,{passive:true});addEventListener('pointerdown',down,{passive:true});addEventListener('pointerup',up,{passive:true});
@@ -36,8 +38,8 @@ export function Cursor(){
    const s=pressed?.9:1,cx=box.x+box.w/2,cy=box.y+box.h/2,hw=box.w/2*s,hh=box.h/2*s;
    [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([sx,sy],i)=>{const b=brackets.current[i];if(b)b.style.transform=`translate3d(${cx+sx*hw}px,${cy+sy*hh}px,0) scale(${sx},${sy})`;});
    el.style.setProperty('--lock',box.lock.toFixed(3));
-   // The three laser dots orbit the pointer and trail behind it, each a little slower than the last.
-   const spin=now*.0011,radius=(pressed?7:13)*(1-box.lock*.65);
+   // The three laser dots trail behind the pointer, each a little slower than the last.
+   const spin=-Math.PI/2,radius=(pressed?6:10)*(1-box.lock*.65);
    dot.forEach((d,i)=>{const a=spin+i*Math.PI*2/3,gx=mx+Math.cos(a)*radius,gy=my+Math.sin(a)*radius;
     d.x=instant?gx:follow(d.x,gx,26-i*6,dt);d.y=instant?gy:follow(d.y,gy,26-i*6,dt);
     const n=dots.current[i];if(n)n.style.transform=`translate3d(${d.x}px,${d.y}px,0)`;});

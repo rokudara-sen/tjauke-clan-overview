@@ -92,7 +92,8 @@ export function StarMapPage({data,ready}:{data:Dataset;ready:boolean}){
   const down=(e:PointerEvent)=>{if((e.target as HTMLElement).closest('a,button')||e.button!==0)return;drag={x:e.clientX,y:e.clientY};moved=0;el.setPointerCapture(e.pointerId);el.classList.add('is-dragging');};
   const up=()=>{drag=null;el.classList.remove('is-dragging');};
   const leave=()=>{inside=false;};
-  const wheel=(e:WheelEvent)=>{e.preventDefault();if(chosen>=0)return;goalDist=Math.max(1.25,Math.min(4.4,goalDist+e.deltaY*(e.deltaMode===1?.05:.0028)));};
+  // The scroll that dived through the mask is still coasting when the map opens; it must not also travel the map.
+  const wheel=(e:WheelEvent)=>{e.preventDefault();if(chosen>=0||(arrival==='mask'&&performance.now()-begin<900))return;goalDist=Math.max(1.25,Math.min(4.4,goalDist+e.deltaY*(e.deltaMode===1?.05:.0028)));};
   el.addEventListener('pointermove',pointer);el.addEventListener('pointerdown',down);el.addEventListener('pointerup',up);el.addEventListener('pointercancel',up);el.addEventListener('pointerleave',leave);el.addEventListener('wheel',wheel,{passive:false});
   // Choosing a section flies the camera into its star before the page opens.
   // Choosing a section detaches its star; the effects layer carries it down while the map tips up after it.
@@ -154,10 +155,10 @@ export function StarMapPage({data,ready}:{data:Dataset;ready:boolean}){
  // A returning star finds the map already there; only arrivals from elsewhere fade it in.
  return <section ref={root} className={`star-map${flat?' is-flat':''}${arrival?.startsWith('return:')?' is-homecoming':''}`} aria-label="Clan star map. Drag to orbit, scroll to travel, choose a star to open its section.">
   <Cosmos camera={camera} intensity={.7}/><canvas ref={glCanvas} className="star-canvas" aria-hidden="true"/><canvas ref={overlay} className="star-overlay" aria-hidden="true"/>
-  <h1 className="sr-only">Clan</h1>
+  <h1 className="sr-only">Clan map</h1>
   <nav className="star-destinations" aria-label="Clan sections">{sections.map((s,i)=><a key={s.route} ref={el=>{links.current[i]=el;}} href={href(s.route)} data-instant onClick={choose(i)} onMouseEnter={()=>hover(i)} onMouseLeave={()=>hover(null)} onFocus={()=>hover(i)} onBlur={()=>hover(null)} className={lit===i?'is-lit':undefined}><span>{s.name}</span>{ready&&s.kind&&<small>{counts[i]} published</small>}</a>)}</nav>
-  <div className="star-portals"><a href={href('dashboard')}>‹ Home</a><a href={href('archive')}>Archive ›</a></div>
+  <div className="star-portals"><a href={href('dashboard')}>‹ Home</a><a href={href('archive')}>Catalogue ›</a></div>
   <div className="star-strip" aria-hidden="true">{sections.map((s,i)=><button type="button" tabIndex={-1} key={s.route} className={lit===i?'is-lit':undefined} onMouseEnter={()=>hover(i)} onMouseLeave={()=>hover(null)} onClick={()=>fly.current(i)}>{s.name}</button>)}</div>
-  <div className="scene-bottom"><span>{lit===null?'Drag to orbit · Scroll to travel':`${sections[lit].name}${ready&&sections[lit].kind?` · ${counts[lit]} published`:''}`}</span></div>
+  <div className="scene-bottom"><span>{lit===null?<>Explore the clan · Drag to orbit<span className="map-travel">, scroll to travel</span></>:`${sections[lit].name}${ready&&sections[lit].kind?` · ${counts[lit]} published`:''}`}</span></div>
  </section>;
 }

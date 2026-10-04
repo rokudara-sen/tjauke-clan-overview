@@ -73,7 +73,7 @@ export function MaskHome({data,ready}:{data:Dataset;ready:boolean}){
    if(sculpted)upload(sculpted);
    else{worker=new Worker(new URL('./maskWorker.ts',import.meta.url),{type:'module'});
     worker.onmessage=(e:MessageEvent<Float32Array>)=>{sculpted=e.data;upload(e.data);worker?.terminate();worker=null;};
-    worker.postMessage(innerWidth<650?60000:110000);}
+    worker.postMessage(innerWidth<650?40000:110000);}
   }
   const resize=()=>{width=el.clientWidth;height=el.clientHeight;dpr=Math.min(devicePixelRatio||1,2);lc.width=width*dpr;lc.height=height*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);};
   const observer=new ResizeObserver(resize);observer.observe(el);resize();
@@ -81,7 +81,7 @@ export function MaskHome({data,ready}:{data:Dataset;ready:boolean}){
   const leave=()=>{inside=false;};
   // Diving through the mask is how the home page hands over to the clan star map.
   dive.current=()=>{if(diving)return;if(still||!gl||!points){navigate('#/clan',{veil:false});return;}diving=1;diveStart=performance.now();};
-  const wheel=(e:WheelEvent)=>{e.preventDefault();const now=performance.now();if(now-wheelAt>400)wheelSum=0;wheelAt=now;if(e.deltaY>0)wheelSum+=e.deltaY*(e.deltaMode===1?30:1);if(wheelSum>90&&now-begin>700)dive.current();};
+  const wheel=(e:WheelEvent)=>{e.preventDefault();const now=performance.now();if(now-wheelAt>400)wheelSum=0;wheelAt=now;if(e.deltaY>0)wheelSum+=e.deltaY*(e.deltaMode===1?30:1);if(wheelSum>120&&now-begin>700)dive.current();};
   let touchY:number|null=null;
   const touchStart=(e:TouchEvent)=>{touchY=e.touches[0].clientY;},touchMove=(e:TouchEvent)=>{if(touchY!==null&&touchY-e.touches[0].clientY>70){touchY=null;dive.current();}};
   el.addEventListener('pointermove',pointer);el.addEventListener('pointerleave',leave);el.addEventListener('wheel',wheel,{passive:false});
@@ -160,7 +160,7 @@ export function MaskHome({data,ready}:{data:Dataset;ready:boolean}){
    // The context belongs to the canvas, which a remount reuses, so release only what this mount created.
    if(gl){if(points)gl.deleteBuffer(points.buffer);if(shader)gl.deleteProgram(shader.p);}};
  },[]);
- return <section ref={root} className="mask-home" tabIndex={0} aria-label="Tjau’ke clan mask. Choose a section, or scroll down to enter the clan star map." onClick={e=>{
+ return <section ref={root} className="mask-home" tabIndex={0} aria-label="Tjau’ke clan mask. Choose a section, or scroll down to enter the clan map." onClick={e=>{
    // A click on the mask itself (not a section) dives into the clan.
    if((e.target as HTMLElement).closest('a,button'))return;const b=e.currentTarget.getBoundingClientRect(),x=e.clientX-b.left-b.width/2,y=e.clientY-b.top-b.height/2;
    if(Math.abs(x)<b.width*.1&&Math.abs(y)<b.height*.2)dive.current();}}>

@@ -248,12 +248,12 @@ export function ascend(from:Point,swap:()=>void){
  * Opens a record from inside a page: the chosen point ignites, a ring of light runs out from it, and the new page
  * blooms out of that point while the old one recedes. The small cousin of the falling star.
  */
-const BLOOM=.78;
+const BLOOM=.5;
 export function ignite(from:Point,swap:()=>void){
  if(busy){if(!opening)swap();return;}
  if(reducedMotion()){swap();return;}
  busy=true;opening=true;
- const bits:Bit[]=[];for(let i=0;i<26;i++)bits.push(spark(from.x,from.y,560,2+Math.random()));
+ const bits:Bit[]=[];for(let i=0;i<14;i++)bits.push(spark(from.x,from.y,480,2+Math.random()));
  let clock=0,swapped=false,bloom=-1,live=false,anim:Animation|null=null;
  const origin=`${from.x}px ${from.y}px`,radius=(k:number)=>easeOutQuart(k);
  run((dt,ctx,w,h)=>{
@@ -286,7 +286,7 @@ export function ignite(from:Point,swap:()=>void){
  * Goes back up (a record to its section): the page folds into the chosen link as a closing ring, the section
  * waiting underneath, and the point it closes on flashes once as the ring shuts.
  */
-const CLOSE=.62;
+const CLOSE=.42;
 export function collapse(to:Point,swap:()=>void){
  if(busy){if(!opening)swap();return;}
  if(reducedMotion()){swap();return;}
@@ -296,7 +296,7 @@ export function collapse(to:Point,swap:()=>void){
  live=morph(()=>{opening=false;swap();},html=>{
   start=clock;const far=reach(to,innerWidth,innerHeight)*1.05;
   anim=html.animate(sampled(k=>`circle(${(radius(k)*far).toFixed(1)}px at ${origin})`),{duration:CLOSE*1000,easing:'linear',pseudoElement:OLD,fill:'both'});
-  html.animate([{transform:'scale(1.04)',filter:'brightness(.4)',transformOrigin:origin},{transform:'scale(1)',filter:'brightness(1)',transformOrigin:origin}],{duration:CLOSE*1000+200,easing:'cubic-bezier(.2,.7,.3,1)',pseudoElement:NEW,fill:'both'});
+  html.animate([{transform:'scale(1.04)',filter:'brightness(.4)',transformOrigin:origin},{transform:'scale(1)',filter:'brightness(1)',transformOrigin:origin}],{duration:CLOSE*1000+120,easing:'cubic-bezier(.2,.7,.3,1)',pseudoElement:NEW,fill:'both'});
  },'collapse');
  if(!live){opening=false;busy=false;swap();return;}
  run((dt,ctx,w,h)=>{
@@ -329,9 +329,9 @@ export function openDialog(dialog:HTMLDialogElement,from:Element|null){
  dialog.getAnimations().forEach(a=>a.cancel());dialog.classList.remove('is-closing');
  const p=centre(from);if(!dialog.open)dialog.showModal();
  if(reducedMotion()||!dialog.animate)return;
- sparks(p,46);
+ sparks(p,24);
  const far=reach(p,innerWidth,innerHeight)*1.05;
- dialog.animate(sampled(k=>`circle(${(easeOutQuart(k)*far).toFixed(1)}px at ${p.x}px ${p.y}px)`),{duration:640,easing:'linear'});
+ dialog.animate(sampled(k=>`circle(${(easeOutQuart(k)*far).toFixed(1)}px at ${p.x}px ${p.y}px)`),{duration:420,easing:'linear'});
 }
 export function closeDialog(dialog:HTMLDialogElement,to:Element|null){
  if(!dialog.open||dialog.classList.contains('is-closing'))return;
@@ -339,6 +339,6 @@ export function closeDialog(dialog:HTMLDialogElement,to:Element|null){
  const p=centre(to),far=reach(p,innerWidth,innerHeight)*1.05;
  // The backdrop clears alongside (see `.is-closing` in the stylesheet).
  dialog.classList.add('is-closing');
- const a=dialog.animate(sampled(k=>`circle(${((1-easeIn(k))*far).toFixed(1)}px at ${p.x}px ${p.y}px)`),{duration:420,easing:'linear'});
- a.onfinish=()=>{if(!dialog.classList.contains('is-closing'))return;dialog.classList.remove('is-closing');dialog.close();sparks(p,18);};
+ const a=dialog.animate(sampled(k=>`circle(${((1-easeIn(k))*far).toFixed(1)}px at ${p.x}px ${p.y}px)`),{duration:300,easing:'linear'});
+ a.onfinish=()=>{if(!dialog.classList.contains('is-closing'))return;dialog.classList.remove('is-closing');dialog.close();sparks(p,10);};
 }

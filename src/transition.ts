@@ -9,7 +9,8 @@ import { reducedMotion } from './gl';
  *   the archive): it shatters on the floor and the new page opens through the blast.
  * - Going back to the clan map, the current section's star lifts out as the page sinks, and drops into its slot.
  * - Inside a page, a link deeper (a record) ignites where it was chosen and the new page opens out of that point;
- *   a link back up (a record to its section) collapses the page into the link.
+ *   a link back up (a record to its section) collapses the page into the link. Moving sideways from one record to
+ *   another is routine, so it crossfades like everything else.
  * - Everything else (the header, the index, search, forms) crossfades: the old page lifts away over the new one.
  * The mask dives into the star map with `through`: the mask keeps flying past while the map opens behind it.
  */
@@ -56,7 +57,7 @@ const sectionOf=(hash:string)=>hash.replace(/^#\//,'').split('/')[0]||'dashboard
 /** The quiet hand-off: the old page lifts away and fades over the new one, which runs its own entrance. */
 function soft(to:string){
  const go=()=>commit(to);
- if(morph(go,html=>{html.animate([{opacity:1,transform:'none'},{opacity:0,transform:'translate3d(0,-18px,0)'}],{duration:340,easing:'cubic-bezier(.4,0,.2,1)',pseudoElement:OLD,fill:'both'});},'fade'))return;
+ if(morph(go,html=>{html.animate([{opacity:1,transform:'none'},{opacity:0,transform:'translate3d(0,-18px,0)'}],{duration:260,easing:'cubic-bezier(.4,0,.2,1)',pseudoElement:OLD,fill:'both'});},'fade'))return;
  const main=document.getElementById('main');
  if(reducedMotion()||!main?.animate){go();return;}
  const out=main.animate([{opacity:1,transform:'none'},{opacity:0,transform:'translate3d(0,-12px,0)'}],{duration:180,easing:'cubic-bezier(.4,0,1,1)',fill:'forwards'});
@@ -103,8 +104,8 @@ export function interceptLinks(root:Document){
   const star=!!a.closest('.mask-home,.star-map,.archive-catalogue')&&to.split('/').length===2;
   // Links within an inner page's content ignite (deeper) or collapse (back up); workspaces switch tabs quietly.
   const content=!star&&!!a.closest('.archive-page #main')&&!a.closest('.workspace');
-  const up=location.hash.startsWith(to+'/')||a.classList.contains('back');
-  navigate(to,{from:e.detail>0?{x:e.clientX,y:e.clientY}:a.getBoundingClientRect(),star,kind:content?(up?'collapse':'ember'):undefined});
+  const up=location.hash.startsWith(to+'/')||a.classList.contains('back'),sideways=location.hash.split('/').length>2&&to.split('/').length>2;
+  navigate(to,{from:e.detail>0?{x:e.clientX,y:e.clientY}:a.getBoundingClientRect(),star,kind:content&&!sideways?(up?'collapse':'ember'):undefined});
  };
  root.addEventListener('click',click);
  return()=>root.removeEventListener('click',click);
