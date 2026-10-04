@@ -83,7 +83,7 @@ export function StarMapPage({data,ready}:{data:Dataset;ready:boolean}){
   // Camera: orbit angles with drag inertia and a distance the wheel travels along. A chosen star leaves the map and falls.
   // A star coming home finds the map already settled, so its slot holds still while it drops in.
   const homecoming=arrival?.startsWith('return:')?sections.findIndex(s=>s.route===arrival.slice(7)):-1;
-  let yaw=kept?.yaw??(arrival==='mask'?-.9:.5),pitch=kept?.pitch??.18,vy=0,vp=0,dist=kept?.dist??(arrival==='mask'?.3:still||homecoming>=0?2.9:5.5),goalDist=kept?.goalDist??2.9,alpha=kept?.alpha??0,px=0,py=0;
+  let yaw=kept?.yaw??(arrival==='mask'?-.9:.5),pitch=kept?.pitch??.18,vy=0,vp=0,dist=kept?.dist??(arrival==='mask'?.3:still||homecoming>=0?2.9:5.5),goalDist=kept?.goalDist??2.9,alpha=kept?.alpha??(homecoming>=0?.85:0),px=0,py=0;
   let drag:{x:number;y:number}|null=null,moved=0,active=-1,chosen=-1,returning=kept?kept.returning:homecoming,pulse=-1,fall=0,screens:{x:number;y:number;depth:number}[]=[];const focus=[0,0,0];
   const resize=()=>{width=el.clientWidth;height=el.clientHeight;dpr=Math.min(devicePixelRatio||1,2);oc.width=width*dpr;oc.height=height*dpr;octx.setTransform(dpr,0,0,dpr,0,0);};
   const observer=new ResizeObserver(resize);observer.observe(el);resize();
@@ -151,7 +151,8 @@ export function StarMapPage({data,ready}:{data:Dataset;ready:boolean}){
  },[countKey,arrival]);
  const choose=(i:number)=>(e:MouseEvent)=>{if(e.button!==0||e.metaKey||e.ctrlKey||e.shiftKey)return;e.preventDefault();fly.current(i);};
  const hover=(i:number|null)=>{hovered.current=i;};
- return <section ref={root} className={flat?'star-map is-flat':'star-map'} aria-label="Clan star map. Drag to orbit, scroll to travel, choose a star to open its section.">
+ // A returning star finds the map already there; only arrivals from elsewhere fade it in.
+ return <section ref={root} className={`star-map${flat?' is-flat':''}${arrival?.startsWith('return:')?' is-homecoming':''}`} aria-label="Clan star map. Drag to orbit, scroll to travel, choose a star to open its section.">
   <Cosmos camera={camera} intensity={.7}/><canvas ref={glCanvas} className="star-canvas" aria-hidden="true"/><canvas ref={overlay} className="star-overlay" aria-hidden="true"/>
   <h1 className="sr-only">Clan</h1>
   <nav className="star-destinations" aria-label="Clan sections">{sections.map((s,i)=><a key={s.route} ref={el=>{links.current[i]=el;}} href={href(s.route)} data-instant onClick={choose(i)} onMouseEnter={()=>hover(i)} onMouseLeave={()=>hover(null)} onFocus={()=>hover(i)} onBlur={()=>hover(null)} className={lit===i?'is-lit':undefined}><span>{s.name}</span>{ready&&s.kind&&<small>{counts[i]} published</small>}</a>)}</nav>

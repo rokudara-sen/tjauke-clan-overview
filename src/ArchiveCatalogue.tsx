@@ -50,7 +50,7 @@ export function ArchiveCatalogue({data,status}:{data:Dataset;status:string}){
  const go=(next:number,direction:number)=>{const n=(next+entries.length)%entries.length;if(n===current.current)return;
   setLeaving({index:current.current,dir:direction,key:++stamp.current});setDir(direction);current.current=n;setSelected(n);};
  const step=(n:number)=>go(current.current+n,n>0?1:-1);
- useEffect(()=>{if(!leaving)return;const t=setTimeout(()=>setLeaving(l=>l&&l.key===leaving.key?null:l),reducedMotion()?0:750);return()=>clearTimeout(t);},[leaving]);
+ useEffect(()=>{if(!leaving)return;const t=setTimeout(()=>setLeaving(l=>l&&l.key===leaving.key?null:l),reducedMotion()?0:600);return()=>clearTimeout(t);},[leaving]);
  useEffect(()=>{const el=root.current!;const onWheel=(e:WheelEvent)=>{if(innerHeight<700)return;e.preventDefault();if(Math.abs(e.deltaY)<4||Date.now()-lastWheel.current<420)return;lastWheel.current=Date.now();step(e.deltaY>0?1:-1);};el.addEventListener('wheel',onWheel,{passive:false});return()=>el.removeEventListener('wheel',onWheel);},[]);
  const e=entries[selected];
  return <section ref={root} className="archive-catalogue" style={{['--index' as string]:selected}} aria-label="Browse archive sections" tabIndex={0} onKeyDown={ev=>{if(ev.target!==ev.currentTarget)return;if(['ArrowDown','ArrowRight','ArrowUp','ArrowLeft'].includes(ev.key)){ev.preventDefault();step(ev.key==='ArrowDown'||ev.key==='ArrowRight'?1:-1);}}}>

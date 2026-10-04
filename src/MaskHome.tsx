@@ -96,7 +96,8 @@ export function MaskHome({data,ready}:{data:Dataset;ready:boolean}){
    const mobile=width<650,cx=width/2,cy=height*.5,base=Math.min(width*(mobile?.25:.115),height*.19);
    // The dive: the camera falls between the lenses while the page darkens, then the star map takes over.
    const fly=diving?Math.min(1,(now-diveStart)/1150):0,flyE=ease(fly);
-   if(diving===1&&fly>=1){diving=2;navigate('#/clan',{veil:false,arrival:'mask'});}
+   // The map takes over before the dive ends, so the mask's points are still rushing past as it opens behind them.
+   if(diving===1&&fly>=.8){diving=2;navigate('#/clan',{veil:false,through:true,arrival:'mask'});}
    const night=Math.max(0,Math.min(1,(flyE-.2)/.6));
    el.style.backgroundColor=`rgb(${BONE.map((v,i)=>Math.round(v+(NIGHT[i]-v)*night))})`;
    shell?.classList.toggle('scene-night',night>.5);
@@ -122,7 +123,7 @@ export function MaskHome({data,ready}:{data:Dataset;ready:boolean}){
     gl.uniform1f(u('u_yaw'),yaw);gl.uniform1f(u('u_pitch'),pitch);gl.uniform3f(u('u_light'),lightX/len,lightY/len,.8/len);
     gl.uniform1f(u('u_assemble'),ease(assemble));gl.uniform2f(u('u_mouse'),mx,my);gl.uniform1f(u('u_hover'),still?0:Math.min(1,stir*1.5)*(inside?1:0));
     gl.uniform1f(u('u_dpr'),dpr);gl.uniform1f(u('u_time'),calm||still?0:t);gl.uniform1f(u('u_fly'),flyE);
-    gl.uniform3f(u('u_ink'),ink[0],ink[1],ink[2]);gl.uniform3f(u('u_red'),.68,.16,.1);gl.uniform1f(u('u_alpha'),Math.min(1,assemble*3)*(1-Math.max(0,(flyE-.6)/.4)));gl.uniform1f(u('u_glow'),Math.max(glow,flare));
+    gl.uniform3f(u('u_ink'),ink[0],ink[1],ink[2]);gl.uniform3f(u('u_red'),.68,.16,.1);gl.uniform1f(u('u_alpha'),Math.min(1,assemble*3)*(1-Math.max(0,(flyE-.88)/.12)));gl.uniform1f(u('u_glow'),Math.max(glow,flare));
     gl.drawArrays(gl.POINTS,0,points.count);
    }
    // Radial sections ride a tilted ring that leans with the pointer, so the whole hub feels three dimensional.

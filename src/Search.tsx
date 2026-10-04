@@ -14,7 +14,7 @@ export function Search({data,ready}:{data:Dataset;ready:boolean}){
  function move(e:ReactKeyboardEvent){
   if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();if(hits.length)setIndex(i=>(i+(e.key==='ArrowDown'?1:hits.length-1))%hits.length);}
   else if(e.key==='Escape'){e.preventDefault();close();}
-  else if(e.key==='Enter'&&hits[index]){e.preventDefault();const from=document.getElementById(`hit-${index}`)?.getBoundingClientRect();dialog.current?.close();navigate(href(hits[index].kind,hits[index].row.id),{from});}
+  else if(e.key==='Enter'&&hits[index]){e.preventDefault();const from=document.getElementById(`hit-${index}`)?.getBoundingClientRect();if(location.hash===href(hits[index].kind,hits[index].row.id))close();else navigate(href(hits[index].kind,hits[index].row.id),{from});}
  }
  return <>
   <button ref={button} type="button" className="search-button" onClick={open} aria-keyshortcuts="Control+K /" aria-haspopup="dialog">Search<kbd aria-hidden="true">/</kbd></button>
@@ -27,7 +27,7 @@ export function Search({data,ready}:{data:Dataset;ready:boolean}){
    :!query.trim()?<p className="search-note">Searches names first, then epithets, meanings, quarry, summaries and eras.</p>
    :!hits.length?<p className="search-note" role="status">Nothing matches “{query.trim()}”.</p>
    :<ul id="search-results" role="listbox" aria-label="Results">{hits.map((h,i)=><li key={`${h.kind}/${h.row.id}`} id={`hit-${i}`} role="option" aria-selected={i===index}>
-     <a href={href(h.kind,h.row.id)} tabIndex={-1} onClick={()=>dialog.current?.close()} onMouseMove={()=>setIndex(i)}><span>{h.row.name}{h.row.archived?<small> archived</small>:null}</span><small>{schemas[h.kind].title}{h.match&&<> · {h.match}</>}</small></a>
+     <a href={href(h.kind,h.row.id)} tabIndex={-1} onMouseMove={()=>setIndex(i)}><span>{h.row.name}{h.row.archived?<small> archived</small>:null}</span><small>{schemas[h.kind].title}{h.match&&<> · {h.match}</>}</small></a>
     </li>)}</ul>}
    <p className="search-keys" aria-hidden="true"><kbd>↑</kbd><kbd>↓</kbd> move <kbd>Enter</kbd> open <kbd>Esc</kbd> close</p>
   </dialog>

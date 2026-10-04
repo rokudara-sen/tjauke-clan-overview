@@ -164,3 +164,32 @@
 .archive-catalogue>.cosmos{z-index:-2}
 /* Labels keep their edge over bright nebula. */
 .star-destinations a,.star-strip button,.star-portals a,.star-map .scene-bottom{text-shadow:0 0 14px #050605,0 0 3px #050605}
+/*
+ * Page hand-overs run as view transitions driven from src/fx.ts and src/transition.ts: the browser's own crossfade
+ * is switched off so the old and new pages are moved only by those scripts. The effects layer and the sight keep
+ * their own names, so they stay live above both page snapshots instead of freezing into the old one.
+ */
+.fx-layer{view-transition-name:fx-layer}
+.sight{view-transition-name:sight}
+::view-transition-old(root),::view-transition-new(root){animation:none;mix-blend-mode:normal}
+::view-transition-group(fx-layer),::view-transition-group(sight),::view-transition-new(fx-layer),::view-transition-new(sight){animation:none}
+::view-transition-old(fx-layer),::view-transition-old(sight){display:none}
+/* The new page is opaque, so wherever the old page leaves by fading or folding it must lie on top; only an opening shows the new page through a hole in the old. */
+html[data-vt]:not([data-vt=open])::view-transition-old(root){z-index:1}
+/* The page background is painted on the canvas, outside the snapshot, so the outgoing page carries its own. */
+html[data-vt]:not([data-vt=open])::view-transition-old(root){background:#0a0b0a}
+/* Dialog backdrops darken as the dialog bursts open and clear as it collapses, instead of switching in one frame. */
+.site-shell dialog::backdrop{opacity:1;transition:opacity .5s cubic-bezier(.2,.8,.2,1)}
+.site-shell dialog.is-closing::backdrop{opacity:0;transition-duration:.42s;transition-timing-function:cubic-bezier(.4,0,.6,1)}
+@starting-style{.site-shell dialog[open]::backdrop{opacity:0}}
+/* The map comes up quickly enough to meet a returning star. */
+.star-map .star-canvas,.star-map .star-destinations{animation-duration:.8s}
+/* Archive covers answer the click at once: the new cover wipes in from the direction of travel inside its frame. */
+@media(prefers-reduced-motion:no-preference){
+ .catalogue-covers .cover-in{animation:cover-enter .7s cubic-bezier(.16,1,.3,1) backwards}
+ .catalogue-covers .cover-out{animation:cover-leave .55s cubic-bezier(.3,0,.2,1) forwards}
+ .cover-in .cover-word>span{animation-duration:.6s;animation-timing-function:cubic-bezier(.16,1,.3,1)}
+ @keyframes cover-enter{from{clip-path:inset(calc(50% + var(--dir)*50%) 0 calc(50% - var(--dir)*50%) 0);transform:translateY(calc(var(--dir)*28px))}to{clip-path:inset(0);transform:none}}
+ @keyframes cover-leave{from{opacity:1}to{transform:translateY(calc(var(--dir)*-56px)) scale(.94);opacity:0;filter:brightness(.4)}}
+}
+.star-map.is-homecoming :is(.star-canvas,.star-destinations,.star-portals,.star-strip){animation:none}
