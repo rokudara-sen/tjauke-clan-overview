@@ -24,6 +24,8 @@ export const supersedeRelation=(oldRow:RecordData,next:RecordData,reason:string)
 export const usernamePattern=/^[A-Za-z0-9][A-Za-z0-9_.-]{2,23}$/;
 export const usernameAvailable=(name:string)=>call<boolean>('username_available',{name});
 export const claimUsername=(name:string)=>call<void>('claim_username',{name});
+/** Hunters that already have an account, which registration does not offer. Empty until the migration that adds it runs. */
+export async function huntersTaken():Promise<string[]>{if(!client)return [];const {data,error}=await client.rpc('hunters_taken');if(error){if(missingTable(error))return [];throw error;}return (data as string[]|null)||[];}
 /** Requests an account. Emails are only used to sign in; profiles carry the public username. */
 export async function register(email:string,password:string,username:string,member:string,note:string){
  if(!client)throw Error('Connect Supabase first.');

@@ -40,6 +40,7 @@ For the local workbook preview, set `VITE_LOCAL_SNAPSHOT=true` and place the bou
 12. Run `supabase/migrations/202610050001_household_seniors.sql` once. It makes the Household senior duty the only place a household senior is recorded (see below), and removes anonymous access to functions meant for signed-in accounts.
 13. Run `supabase/migrations/202610060001_standing_not_earned.sql` once. Records conferring Elder, Clan Leader or Ancient standing can no longer cite an undertaking: senior standing is conferred, not earned through one hunt. Existing records are left as they are until next edited.
 14. Run `supabase/migrations/202610070001_trophies.sql` once. It adds the trophy hall. Until it runs, the Trophy hall page shows no trophies and saving a trophy hall record fails.
+15. Run `supabase/migrations/202610080001_taken_hunters.sql` once. Registration then no longer offers hunters that already have a linked account, and the database drops such a request if one is sent anyway. Until it runs, registration offers every hunter as before; approval still refuses to link a hunter twice.
 
 ### Household seniors
 

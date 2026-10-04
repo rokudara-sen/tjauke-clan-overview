@@ -1,0 +1,167 @@
+/*
+ * Working pages: administration and the hunter's account. Calm and quick to scan; motion is short and only
+ * confirms what happened (a tab changing, the drawer arriving, a save landing). Selectors start with
+ * ".archive-page .workspace" so they outrank the night skin's general button rules.
+ */
+.workspace{position:relative}
+.ws-loading{font:11px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--text-3)}
+.ws-kicker{display:block;font:10px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--text-3)}
+.ws-lede{font-size:15px;color:var(--text-2);margin:0 0 28px;max-width:70ch;text-wrap:pretty}
+
+/* The bar above the tabs: who is working and the few page-wide actions. */
+.ws-bar{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:0 0 16px;font:10px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--text-3)}
+.ws-bar-actions{display:flex;gap:10px 18px;align-items:center;flex-wrap:wrap}
+.ws-identity{display:grid;grid-template-columns:64px minmax(0,1fr) auto;gap:20px;align-items:center;padding-bottom:26px;margin-bottom:6px}
+.ws-avatar{width:64px;height:64px;border:1px solid var(--line-strong);display:grid;place-items:center;overflow:hidden;background:#0d0e0c}
+.ws-avatar img{width:100%;height:100%;object-fit:cover}
+.ws-avatar span{font:900 34px/1 'Arial Black','Archivo',sans-serif;color:transparent;background-image:radial-gradient(circle,#e6e2d5 .8px,transparent 1.2px);background-size:4px 4px;-webkit-background-clip:text;background-clip:text}
+.ws-who strong{display:block;font:900 26px/1.05 'Arial Black','Archivo',sans-serif;letter-spacing:-.04em;margin:4px 0 3px}
+.ws-who small{font:11px var(--mono);letter-spacing:.06em;color:var(--text-2)}
+
+/* Tabs stay in reach while scrolling. The active one is underlined; counts are the only colour. */
+.ws-tabs{display:flex;gap:2px;border-bottom:1px solid var(--line-strong);margin-bottom:34px;overflow-x:auto;scrollbar-width:none;position:sticky;top:0;z-index:5;background:#0a0b0ae8;backdrop-filter:blur(8px)}
+.archive-page .workspace .ws-tabs button{--fill:transparent;--edge:transparent;border:0;background:none;padding:16px 18px 14px;font:600 12px/1 Arial,sans-serif;letter-spacing:.1em;text-transform:uppercase;color:var(--text-3);white-space:nowrap;box-shadow:inset 0 -2px transparent;transition:color .25s,box-shadow .35s cubic-bezier(.2,.8,.2,1)}
+.archive-page .workspace .ws-tabs button:hover{background:none;color:var(--text)}
+.archive-page .workspace .ws-tabs button[aria-selected=true]{color:var(--text);box-shadow:inset 0 -2px var(--text)}
+.archive-page .workspace .ws-tabs button:focus-visible{outline:1px solid var(--accent);outline-offset:-4px}
+.ws-count{display:inline-block;min-width:18px;margin-left:8px;padding:3px 5px;background:var(--accent);color:#fff;font:600 9px/1 var(--mono);letter-spacing:0;text-align:center}
+@media(prefers-reduced-motion:no-preference){.ws-panel{animation:ws-panel .45s cubic-bezier(.2,.8,.2,1)}@keyframes ws-panel{from{opacity:0;transform:translateY(10px)}}}
+
+/* Records: types on the left, the list beside them. */
+.ws-records{display:grid;grid-template-columns:210px minmax(0,1fr);gap:44px;align-items:start}
+.ws-kinds{position:sticky;top:76px;display:grid;gap:22px}
+.ws-kinds h3{font:10px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--text-3);margin:0 0 6px}
+.archive-page .workspace .ws-kinds button{--fill:transparent;--edge:transparent;border:0;display:flex;justify-content:space-between;align-items:baseline;width:100%;padding:7px 10px;font:500 14px/1.2 'Archivo',sans-serif;letter-spacing:0;text-transform:none;color:var(--text-2);box-shadow:inset 1px 0 var(--line);transition:color .2s,background-color .2s,box-shadow .3s}
+.archive-page .workspace .ws-kinds button small{font:10px var(--mono);color:var(--text-3)}
+.archive-page .workspace .ws-kinds button:hover{background:#e6e2d508;color:var(--text)}
+.archive-page .workspace .ws-kinds button[aria-current]{color:var(--text);background:#e6e2d50c;box-shadow:inset 2px 0 var(--text)}
+.ws-list-head{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:16px;flex-wrap:wrap}
+.ws-list-head h2,.ws-list-head h3{margin:0}
+.ws-list-head h2{font:900 clamp(24px,2.4vw,34px)/1 'Arial Black','Archivo',sans-serif;letter-spacing:-.05em;text-transform:uppercase}
+.ws-tools{display:flex;gap:18px 28px;align-items:end;flex-wrap:wrap;margin-bottom:10px}
+.ws-search{flex:1;min-width:220px}
+.ws-filter{display:flex;gap:16px}
+.archive-page .workspace .ws-filter button{--fill:transparent;--edge:transparent;border:0;padding:8px 0;font:500 10px var(--mono);letter-spacing:.12em;color:var(--text-3);box-shadow:inset 0 -1px transparent}
+.archive-page .workspace .ws-filter button small{margin-left:6px;opacity:.7}
+.archive-page .workspace .ws-filter button:hover{background:none;color:var(--text)}
+.archive-page .workspace .ws-filter button[aria-pressed=true]{color:var(--text);box-shadow:inset 0 -1px var(--text)}
+
+/* Rows: the whole row is the target; status and date line up in columns. */
+.ws-rows{list-style:none;margin:0;padding:0;border-top:1px solid var(--line)}
+.ws-rows li{border-bottom:1px solid var(--line)}
+.archive-page .workspace .ws-rows button{--fill:transparent;--edge:transparent;border:0;display:grid;grid-template-columns:minmax(0,1fr) auto 110px;gap:18px;align-items:center;width:100%;padding:15px 12px 15px 22px;text-align:left;font:500 15px/1.3 'Archivo',sans-serif;letter-spacing:0;text-transform:none;color:var(--text);position:relative;transition:background-color .2s,padding-left .35s cubic-bezier(.2,.8,.2,1)}
+.archive-page .workspace .ws-rows button:before{content:'';display:block;position:absolute;left:6px;top:50%;width:3px;height:3px;margin-top:-1.5px;background:var(--text-3);transition:background .25s,box-shadow .25s,transform .25s}
+.archive-page .workspace .ws-rows button:hover,.archive-page .workspace .ws-rows button[aria-current]{background:#e6e2d50a;color:var(--text);padding-left:28px}
+.archive-page .workspace .ws-rows button:hover:before,.archive-page .workspace .ws-rows button[aria-current]:before{background:#fff;box-shadow:0 0 8px #fff;transform:scale(1.6)}
+.archive-page .workspace .ws-rows button:disabled{opacity:1;cursor:default}
+.archive-page .workspace .ws-rows button:disabled:hover{background:none;padding-left:22px}
+.ws-row-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ws-rows small{font:10px var(--mono);color:var(--text-3);text-align:right;white-space:nowrap}
+.ws-tag{font:500 9px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;padding:5px 7px;border:1px solid var(--line-strong);color:var(--text-2);white-space:nowrap}
+.ws-tag.is-published{border-color:#e6e2d580;color:var(--text)}
+.ws-tag.is-draft{border-style:dashed;color:var(--text-2)}
+.ws-tag.is-archived{border-color:transparent;color:var(--text-3)}
+.ws-empty{border-top:1px solid var(--line);padding:30px 0}
+.ws-empty strong{display:block;font:900 18px/1.2 'Arial Black','Archivo',sans-serif;letter-spacing:-.03em;text-transform:uppercase}
+.ws-empty p{color:var(--text-3);margin:8px 0 0}
+
+/* The editing drawer. */
+.ws-drawer{position:fixed;inset:0 0 0 auto;margin:0;width:min(780px,100vw);height:100dvh;max-height:none;max-width:none;padding:0;border:0;border-left:1px solid var(--line-strong);background:#0c0d0b;color:var(--text);overflow:hidden}
+.ws-drawer::backdrop{background:#050605b3;backdrop-filter:blur(3px)}
+@media(prefers-reduced-motion:no-preference){.ws-drawer[open]{animation:ws-drawer .5s cubic-bezier(.2,.8,.2,1)}.ws-drawer[open]::backdrop{animation:ws-fade .4s ease-out}@keyframes ws-drawer{from{transform:translate3d(60px,0,0);opacity:0}}@keyframes ws-fade{from{opacity:0}}}
+.ws-drawer-body{display:flex;flex-direction:column;height:100%}
+.ws-drawer header{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 16px;align-items:end;padding:28px 36px 20px;border-bottom:1px solid var(--line)}
+.ws-drawer header .ws-kicker{grid-column:1}
+.ws-drawer header h2{grid-column:1;margin:0;font:900 clamp(24px,3vw,36px)/1.05 'Arial Black','Archivo',sans-serif;letter-spacing:-.05em;text-transform:uppercase;overflow-wrap:anywhere}
+.archive-page .workspace .ws-close,.archive-page .ws-drawer .ws-close{grid-column:2;grid-row:1/3;align-self:start}
+.ws-drawer-scroll{flex:1;overflow:auto;padding:26px 36px 36px;overscroll-behavior:contain}
+.ws-drawer-scroll fieldset{border:0;padding:0;margin:0;min-width:0;display:grid;gap:24px}
+.ws-drawer footer{border-top:1px solid var(--line-strong);padding:18px 36px 22px;background:#0c0d0b;display:grid;gap:14px}
+.ws-shortcut{font:9px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--text-3)}
+.ws-aside{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:0}
+.ws-aside small{color:var(--text-3)}
+
+/* Fields sit two to a row; long text spans the drawer. */
+.ws-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px 30px}
+.ws-fields>label:has(textarea),.ws-fields>.derived-field{grid-column:1/-1}
+.ws-fields label{margin:0}
+.ws-fields textarea{min-height:120px;line-height:1.55;font-size:15px}
+
+/* Status: one choice of three, each saying what it means. */
+.ws-status{border:0;padding:0;margin:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+.ws-status legend{font:10px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--text-3);margin-bottom:8px;padding:0}
+.ws-status label{position:relative;display:grid;gap:4px;padding:12px 14px;border:1px solid var(--line-strong);cursor:pointer;text-transform:none;letter-spacing:0;font:inherit;color:var(--text-2);transition:border-color .2s,background-color .2s,color .2s}
+.ws-status label:hover{border-color:var(--line-hover)}
+.ws-status label.is-on{border-color:var(--text);background:#e6e2d50d;color:var(--text)}
+.ws-status input{position:absolute;opacity:0;pointer-events:none}
+.ws-status label:has(input:focus-visible){outline:1px solid var(--accent);outline-offset:2px}
+.ws-status span{font:600 14px 'Archivo',sans-serif}
+.ws-status small{font:10px/1.4 var(--mono);color:var(--text-3)}
+
+/* Change note with one-tap reasons. */
+.ws-reason{display:grid;gap:8px}
+.ws-reason label{margin:0}
+.ws-reason>small{font:10px var(--mono);color:var(--text-3)}
+.ws-chips{display:flex;gap:6px;flex-wrap:wrap}
+.archive-page .ws-chips button{--fill:transparent;--edge:var(--line-strong);padding:6px 10px;font:500 10px/1 var(--mono);letter-spacing:.06em;text-transform:none;color:var(--text-2)}
+.archive-page .ws-chips button:hover{--fill:#e6e2d512;--edge:var(--line-hover);color:var(--text)}
+.archive-page .ws-chips button.is-on{--fill:#e6e2d51a;--edge:var(--text);color:var(--text)}
+
+/* Account. */
+.ws-split{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(260px,1fr);gap:56px;align-items:start}
+.ws-profile .ws-fields{grid-template-columns:repeat(2,minmax(0,1fr))}
+.ws-save-row{display:grid;gap:16px;margin-top:26px;padding-top:20px;border-top:1px solid var(--line)}
+.ws-facts{display:grid;gap:0;margin:0}
+.ws-facts div{display:flex;justify-content:space-between;gap:16px;padding:10px 0;border-bottom:1px solid var(--line)}
+.ws-facts dt{font:10px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--text-3)}
+.ws-facts dd{margin:0}
+.ws-settings{display:grid;gap:34px;max-width:640px}
+.ws-inline-form{display:flex;gap:16px;align-items:end;flex-wrap:wrap}
+.ws-inline-form label{flex:1;min-width:220px;margin:0}
+.ws-rename{display:inline-flex;gap:8px;align-items:center}
+.ws-rename input{width:200px}
+.archive-page .ws-inline{margin-left:12px;font-size:9px}
+
+/* Saved: a short confirmation at the foot of the screen. */
+.ws-toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);z-index:70;pointer-events:none}
+.ws-toast span{display:block;padding:12px 18px;background:var(--text);color:#0a0b0a;font:500 12px var(--mono);letter-spacing:.04em;box-shadow:0 18px 40px -12px #000}
+@media(prefers-reduced-motion:no-preference){.ws-toast span{animation:ws-toast 4.2s cubic-bezier(.2,.8,.2,1) both}@keyframes ws-toast{0%{opacity:0;transform:translateY(14px)}8%,88%{opacity:1;transform:none}100%{opacity:0;transform:translateY(6px)}}}
+
+@media(max-width:900px){
+ .ws-records{grid-template-columns:1fr;gap:22px}
+ .ws-kinds{position:static;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px}
+ .ws-kinds>div{display:contents}.ws-kinds h3{display:none}
+ .archive-page .workspace .ws-kinds button{width:auto;white-space:nowrap;gap:8px;box-shadow:inset 0 0 0 1px var(--line)}
+ .archive-page .workspace .ws-kinds button[aria-current]{box-shadow:inset 0 0 0 1px var(--text)}
+ .ws-split{grid-template-columns:1fr;gap:36px}
+}
+@media(max-width:700px){
+ .ws-identity{grid-template-columns:52px minmax(0,1fr)}.ws-identity .ws-bar-actions{grid-column:1/-1}.ws-avatar{width:52px;height:52px}
+ .ws-fields,.ws-profile .ws-fields{grid-template-columns:1fr}
+ .archive-page .workspace .ws-rows button{grid-template-columns:minmax(0,1fr) auto;padding-right:6px}.ws-rows small{display:none}
+ .ws-drawer header,.ws-drawer-scroll,.ws-drawer footer{padding-inline:20px}
+ .ws-tabs{margin-inline:-20px;padding-inline:12px}
+}
+@media(prefers-reduced-motion:reduce){.archive-page .workspace *{transition:none!important}}
+@media print{.ws-tabs,.ws-bar,.ws-toast,.ws-drawer{display:none!important}}
+/* On working pages the title is a label, not a poster, so the tools start near the top of the screen. */
+.archive-page:has(.workspace) .page-heading{padding-bottom:18px;margin-bottom:22px}
+.archive-page:has(.workspace) .page-heading h1{font-size:clamp(30px,3.6vw,52px)}
+.archive-page .workspace .panel{max-width:none}
+.archive-page .workspace .account-groups,.archive-page .workspace .section-note{max-width:80ch}
+/* Witness requests read as a banner above the tabs: the one thing to answer before anything else. */
+.workspace>.section:first-of-type:not(.ws-profile){border:1px solid #e2402b55;border-left:2px solid var(--accent);padding:16px 20px;margin:0 0 26px;background:#e2402b0a}
+.workspace>.section:first-of-type:not(.ws-profile) .section-heading{border:0;padding-top:0}
+.workspace>.section:first-of-type:not(.ws-profile) .section-heading:before{display:none}
+.workspace>.section:first-of-type:not(.ws-profile) h2{font-size:15px}
+/* File pickers match the other controls instead of the platform's grey button. */
+.archive-page input[type=file]{border:0;padding:6px 0;font:12px var(--mono);color:var(--text-2);background:none}
+.archive-page input[type=file]::file-selector-button{margin-right:14px;padding:10px 14px;border:1px solid var(--line-strong);background:transparent;color:var(--text);font:500 10px var(--mono);letter-spacing:.12em;text-transform:uppercase;cursor:pointer;transition:background-color .2s,color .2s}
+.archive-page input[type=file]::file-selector-button:hover{background:var(--text);color:#0a0b0a}
+@media(max-width:700px){
+ /* On a phone the drawer's footer keeps to one line of reasons so the form keeps the screen. */
+ .ws-chips{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}.ws-chips button{flex:none}
+ .ws-shortcut,.ws-reason>small{display:none}
+ .ws-drawer footer{gap:10px;padding-block:12px 14px}
+ .ws-status{grid-template-columns:repeat(3,minmax(0,1fr))}.ws-status small{display:none}
+}

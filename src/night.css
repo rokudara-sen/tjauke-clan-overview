@@ -1,0 +1,166 @@
+/*
+ * Night archive: every inner page sits in the star map's room. No filled cards; hairlines, corner ticks,
+ * mono annotations and oversized type under a drifting night sky. Loaded last so it overrides the older skins.
+ */
+.archive-page{--bg:#0a0b0a;--surface:transparent;--surface-2:transparent;--surface-3:#e6e2d508;--well:transparent;--line:#e6e2d512;--line-strong:#e6e2d526;--line-hover:#e6e2d560;--text:#ece8db;--text-2:#b6b2a5;--text-3:#827f75;--accent:#e2402b;--accent-strong:#b8321f;--accent-ink:#fff6ee;background:#0a0b0a;isolation:isolate}
+.archive-page .layout{position:relative;z-index:1}
+.archive-page .topbar{position:relative;z-index:6;background:transparent;border:0}
+.archive-page footer{position:relative;z-index:1;color:var(--text-3);font:10px var(--mono);letter-spacing:.06em;text-transform:uppercase;border-top:1px solid var(--line);padding-block:22px}
+
+/* The room: three drifting star layers. */
+.night-sky{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none}
+.fx-layer{position:fixed;inset:0;width:100vw;height:100vh;z-index:80;pointer-events:none}
+
+/* Headings rise out of a clip; the rule beneath draws itself. */
+.archive-page .page-location{font:10px var(--mono);letter-spacing:.16em;color:var(--text-3);display:flex;align-items:center;gap:10px}
+.archive-page .page-location{min-height:14px}
+/* The page's star: unlit until the travelling star lands in it, then it flares and keeps a steady glow. */
+.page-star{position:relative;display:inline-block;width:6px;height:6px;margin-right:4px;background:#e6e2d540;flex:none;transition:background .3s,box-shadow .3s,transform .3s cubic-bezier(.34,1.56,.64,1)}
+.page-star:before,.page-star:after{content:'';position:absolute;left:50%;top:50%;background:#fff5e2;opacity:0;pointer-events:none}
+.page-star:before{width:34px;height:1px;margin:-.5px 0 0 -17px}.page-star:after{width:1px;height:34px;margin:-17px 0 0 -.5px}
+.page-star.is-lit{background:#fff8ec;box-shadow:0 0 6px #fff,0 0 16px #ffd9a688}
+.page-star:hover,.page-star:focus-visible{transform:scale(1.5);text-decoration:none}.page-star:hover:before,.page-star:hover:after,.page-star:focus-visible:before,.page-star:focus-visible:after{opacity:.35}
+.page-star:focus-visible{outline:1px solid var(--accent);outline-offset:5px}
+@media(prefers-reduced-motion:no-preference){.page-star.is-lit{animation:star-flare .9s cubic-bezier(.2,.8,.2,1)}.page-star.is-lit:before,.page-star.is-lit:after{animation:star-cross .9s cubic-bezier(.2,.8,.2,1)}
+ @keyframes star-flare{0%{box-shadow:0 0 30px 10px #fff,0 0 80px 24px #ffd9a6aa}100%{box-shadow:0 0 6px #fff,0 0 16px #ffd9a688}}
+ @keyframes star-cross{0%{opacity:1;transform:scale(2.4)}100%{opacity:0;transform:scale(1)}}}
+.archive-page .page-heading{position:relative;border:0;padding-bottom:30px}
+.archive-page .page-heading:after{content:'';position:absolute;left:0;right:0;bottom:0;height:1px;background:var(--line-strong);transform-origin:0 50%}
+.archive-page .page-heading h1,.archive-page .record-head h1{text-wrap:balance}
+@media(prefers-reduced-motion:no-preference){
+ .archive-page .page-heading h1,.archive-page .record-head h1{animation:heading-rise 1s cubic-bezier(.2,.8,.2,1) .15s backwards}
+ .archive-page .page-heading:after{animation:rule-draw 1.2s cubic-bezier(.76,0,.24,1) .3s backwards}
+ @keyframes heading-rise{from{clip-path:inset(0 0 100% 0);transform:translateY(.35em)}to{clip-path:inset(0 0 -20% 0);transform:none}}
+ @keyframes rule-draw{from{transform:scaleX(0)}}
+}
+
+/* Content arrives as it scrolls into view. */
+@media(prefers-reduced-motion:no-preference){
+ .archive-page .reveal{opacity:0;transform:translateY(22px);transition:opacity .8s cubic-bezier(.2,.8,.2,1),transform .9s cubic-bezier(.2,.8,.2,1);transition-delay:var(--delay,0s)}
+ .archive-page .reveal.is-in{opacity:1;transform:none}
+}
+
+/* Panels and states lose their boxes: a hairline above, ticks at the corners. */
+.archive-page :is(.panel,.state){--fill:transparent;--edge:transparent;padding:30px 0 10px;border-top:1px solid var(--line-strong);margin-bottom:34px}
+.archive-page :is(.panel,.state)::before,.archive-page :is(.panel,.state)::after{clip-path:none;background:none;box-shadow:none;z-index:0;width:8px;height:8px;inset:auto;top:-1px;border-top:1px solid var(--text-2)}
+.archive-page :is(.panel,.state)::before{left:0;border-left:1px solid var(--text-2)}.archive-page :is(.panel,.state)::after{right:0;border-right:1px solid var(--text-2)}
+.archive-page .section-heading{border-top-color:var(--line-strong)}
+.archive-page .section-heading:before{width:5px;height:5px;top:-3px;background:var(--text);clip-path:none;box-shadow:0 0 8px #fff9}
+.archive-page .section-heading h2,.archive-page .panel>h2{font:900 clamp(18px,1.6vw,24px)/1.1 'Arial Black','Archivo',sans-serif;letter-spacing:-.04em;text-transform:uppercase}
+.archive-page .section-heading>a{font:10px var(--mono);letter-spacing:.12em;text-transform:uppercase}
+.archive-page .notice{background:transparent;border-left:1px solid var(--accent);font:12px/1.6 var(--mono);color:var(--text-2)}
+.archive-page .eyebrow,.archive-page thead th,.archive-page .record-view dt,.archive-page .record-id{letter-spacing:.14em;color:var(--text-3)}
+
+/* Buttons become annotations that invert when targeted. */
+.archive-page :is(button:not(.text-button):not(.stance),.button-link){--fill:transparent;--edge:var(--line-strong);--cut:0px;font:500 10px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;padding:12px 18px;color:var(--text);transition:color .25s}
+.archive-page :is(button:not(.text-button):not(.stance),.button-link):hover{--fill:var(--text);--edge:var(--text);color:#0a0b0a;text-decoration:none}
+.archive-page .primary{--fill:var(--text)!important;--edge:var(--text)!important;color:#0a0b0a!important}
+.archive-page .primary:hover{--fill:var(--accent)!important;--edge:var(--accent)!important;color:#fff!important}
+.archive-page :is(button,.button-link):disabled{opacity:.4}
+.archive-page .text-button{font:10px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--text-2);text-decoration:underline;text-underline-offset:5px}
+.archive-page .overview-mode{border:0;padding:0;gap:18px}.archive-page .overview-mode button{--edge:transparent;padding:6px 0;color:var(--text-3)}.archive-page .overview-mode button[aria-pressed=true]{--fill:transparent;background:transparent;color:var(--text);box-shadow:inset 0 -1px var(--text)}
+.archive-page .overview-mode button:hover{--fill:transparent;color:var(--text)}
+
+/* Fields are a single line that lights red from the left when focused. */
+.archive-page :is(input:not([type=checkbox]):not([type=radio]):not([type=file]),select,textarea){background:transparent;border:0;border-bottom:1px solid var(--line-strong);padding:10px 0;box-shadow:none;font:15px/1.4 'Archivo',sans-serif;color:var(--text);background-image:linear-gradient(var(--accent),var(--accent));background-size:0 1px;background-repeat:no-repeat;background-position:0 100%;transition:background-size .5s cubic-bezier(.2,.8,.2,1),border-color .2s}
+.archive-page :is(input,select,textarea):hover{border-bottom-color:var(--line-hover)}
+.archive-page :is(input:not([type=checkbox]):not([type=radio]),select,textarea):focus{background-size:100% 1px;box-shadow:none;border-bottom-color:transparent}
+.archive-page select{appearance:none;padding-right:22px;background-image:linear-gradient(var(--accent),var(--accent)),linear-gradient(45deg,transparent 50%,var(--text-2) 50%),linear-gradient(-45deg,transparent 50%,var(--text-2) 50%);background-size:0 1px,5px 5px,5px 5px;background-position:0 100%,calc(100% - 9px) 55%,calc(100% - 4px) 55%}
+.archive-page select:focus{background-size:100% 1px,5px 5px,5px 5px}
+.archive-page select option{background:#0a0b0a;color:var(--text)}
+.archive-page label{font:10px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--text-3)}
+.archive-page input::placeholder,.archive-page textarea::placeholder{color:#5f5c55}
+.archive-page .filters{background:transparent;border:0;border-block:1px solid var(--line);padding:22px 0}
+
+/* Lists and tables: each row carries a star that brightens when the row is targeted. */
+.archive-page .record-list li{position:relative;padding-left:22px;border-bottom-color:var(--line);transition:background .3s}
+.archive-page .record-list li:before{content:'';position:absolute;left:2px;top:calc(14px + .55em);width:3px;height:3px;background:var(--text-3);transition:background .3s,box-shadow .3s,transform .3s}
+.archive-page .record-list li:hover:before{background:#fff;box-shadow:0 0 10px #fff,0 0 2px #fff;transform:scale(1.6)}
+.archive-page .record-list li:hover{background:linear-gradient(90deg,#e6e2d50a,transparent 60%)}
+.archive-page .record-title{font-weight:600;letter-spacing:-.01em}
+.archive-page .tag{font:10px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--text-3);border:1px solid var(--line-strong);padding:3px 7px}
+.archive-page th,.archive-page td{border-bottom-color:var(--line)}
+.archive-page .roster tbody tr{transition:background .3s}.archive-page .roster tbody tr:hover{background:#e6e2d508}
+
+/* Hunter gallery: monograms are stippled like the mask; the cover lifts towards the pointer. */
+.archive-page .hunter-card{border:0;background:transparent}.archive-page .hunter-cover,.archive-page .hunter-cover:hover{text-decoration:none}
+.archive-page .hunter-cover{border:1px solid var(--line-strong);background:#0d0e0c;transition:border-color .4s,transform .6s cubic-bezier(.2,.8,.2,1)}
+.archive-page .hunter-card:hover .hunter-cover{border-color:var(--line-hover);transform:translateY(-6px)}
+.archive-page .hunter-monogram{background:#0d0e0c}
+.archive-page .hunter-monogram span{color:transparent;background-image:radial-gradient(circle,#e6e2d5 .9px,transparent 1.3px);background-size:5px 5px;-webkit-background-clip:text;background-clip:text;opacity:.75;transition:opacity .4s,transform .8s cubic-bezier(.2,.8,.2,1)}
+.archive-page .hunter-card:hover .hunter-monogram span{opacity:1;transform:scale(1.06)}
+.archive-page .hunter-status{font:9px var(--mono);letter-spacing:.12em;text-transform:uppercase;background:transparent;border:1px solid var(--line-strong);color:var(--text-2)}
+.archive-page .hunter-arrow{background:transparent;color:var(--text);border:1px solid var(--line-hover)}
+.archive-page .hunter-card:hover .hunter-arrow{background:var(--accent);border-color:var(--accent)}
+.archive-page .hunter-card h2{font:900 26px/1 'Arial Black','Archivo',sans-serif;letter-spacing:-.05em}
+
+/* Politics: stances read as outlined marks; colour stays only on the edge and the text. */
+.archive-page .stance{--fill:transparent;--cut:0px;font:500 10px var(--mono);letter-spacing:.12em;text-transform:uppercase}
+.archive-page .matrix .stance{font:500 10px var(--mono)}
+.archive-page .stance-unknown{--edge:#e6e2d51c;color:var(--text-3)}
+.archive-page .stance-neutral{--edge:#e6e2d540;color:var(--text-2)}
+.archive-page .stance-hostile{--edge:#93463a;color:#ef9f8e}.archive-page .stance-war{--edge:var(--accent);color:#ffc0b2}
+.archive-page .stance-allied,.archive-page .stance-friendly{--edge:#5e7350;color:#c6d3b0}.archive-page .stance-rival{--edge:#8c7144;color:#dcc59c}
+.archive-page .matrix button.stance:hover{--fill:#e6e2d50c}
+.archive-page .matrix thead th,.archive-page .matrix tbody th{background:#0a0b0a}
+
+/* Overview figures. */
+.archive-page .overview-metrics{border-color:var(--line-strong)}.archive-page .overview-metrics a{border-right-color:var(--line)}
+.archive-page .overview-metrics strong{font-family:'Arial Black','Archivo',sans-serif;letter-spacing:-.06em}
+.archive-page .overview-metrics a:hover strong{color:#fff;text-shadow:0 0 24px #ffd9a655}
+
+/* Timeline marks are stars. */
+.archive-page .tl-mark{background:#0a0b0a;border-color:var(--text-2)}.archive-page .tl-mark.recorded,.archive-page .tl-mark.corroborated{box-shadow:0 0 10px #fff6}
+
+/* Sign in and the other forms sit in a ticked frame. */
+.archive-page .login{position:relative}
+.archive-page .login h2{font:900 28px/1 'Arial Black','Archivo',sans-serif;letter-spacing:-.05em;text-transform:uppercase}
+
+/* Index: the archive as a night sky of links. */
+.archive-index{background:#0a0b0a;color:#ece8db}
+.archive-index::backdrop{background:#0a0b0acc}
+.archive-index nav a{position:relative;border-bottom-color:#e6e2d51a;transition:color .3s,padding-left .5s cubic-bezier(.2,.8,.2,1)}
+.archive-index nav a:before{content:'';position:absolute;left:0;top:50%;width:6px;height:6px;margin-top:-3px;background:#fff;box-shadow:0 0 12px #fff,0 0 3px #fff;transform:scale(0);transition:transform .4s cubic-bezier(.34,1.56,.64,1)}
+.archive-index nav a:hover,.archive-index nav a:focus-visible{padding-left:22px;color:#fff}
+.archive-index nav a:hover:before,.archive-index nav a:focus-visible:before{transform:scale(1)}
+@media(prefers-reduced-motion:no-preference){
+ .archive-index[open] nav a{animation:index-rise .7s cubic-bezier(.2,.8,.2,1) backwards}
+ .archive-index[open] nav .nav-plain:first-child a:nth-child(2),.archive-index[open] nav .nav-group:nth-of-type(1) a{animation-delay:.12s}
+ .archive-index[open] nav .nav-plain:first-child a:nth-child(3),.archive-index[open] nav .nav-group:nth-of-type(2) a{animation-delay:.18s}
+ .archive-index[open] nav .nav-plain:first-child a:nth-child(4),.archive-index[open] nav .nav-group:nth-of-type(3) a{animation-delay:.24s}
+ .archive-index[open] nav .nav-plain:last-child a{animation-delay:.3s}
+ @keyframes index-rise{from{opacity:0;transform:translateY(30px)}}
+ .archive-index[open]{animation:none}
+}
+
+/* Search: a full-width sight line with results as stars. */
+.site-shell .search{background:#0a0b0a;border:0;border-bottom:1px solid #e6e2d526;color:#ece8db;width:100vw;max-width:none;margin:0;inset:0 0 auto;padding:28px 6vw 22px;max-height:80dvh}
+.site-shell .search::backdrop{background:#0a0b0ad9}
+.site-shell .search-field input{font:900 clamp(26px,4vw,54px)/1.1 'Arial Black','Archivo',sans-serif;letter-spacing:-.05em;background:transparent;border:0;border-bottom:1px solid #e6e2d526;box-shadow:none;padding:8px 0;color:#ece8db}
+.site-shell .search-field input:focus{border-bottom-color:#e2402b;box-shadow:none}
+.site-shell .search-field input::placeholder{color:#4d4b45}
+.site-shell .search li a{position:relative;padding-left:20px}
+.site-shell .search li a:before{content:'';position:absolute;left:2px;top:1.05em;width:3px;height:3px;background:#827f75;transition:all .3s}
+.site-shell .search li[aria-selected=true] a:before{background:#fff;box-shadow:0 0 10px #fff;transform:scale(1.6)}
+@media(prefers-reduced-motion:no-preference){.site-shell .search[open] li{animation:index-rise .5s cubic-bezier(.2,.8,.2,1) backwards}.site-shell .search[open] li:nth-child(2){animation-delay:.04s}.site-shell .search[open] li:nth-child(3){animation-delay:.08s}.site-shell .search[open] li:nth-child(n+4){animation-delay:.12s}}
+
+@media print{.night-sky,.fx-layer,.page-star{display:none!important}.archive-page .reveal{opacity:1!important;transform:none!important}.archive-page{background:#fff}}
+@media(prefers-reduced-motion:reduce){.archive-index nav a,.archive-index nav a:before{transition:none}}
+/* Buttons and stance marks drop the clipped-corner layers for a plain hairline border, so a transparent fill stays transparent. */
+.archive-page :is(button:not(.text-button),.button-link,.stance)::before,.archive-page :is(button:not(.text-button),.button-link,.stance)::after{display:none}
+.archive-page :is(button:not(.text-button),.button-link,.stance){border:1px solid var(--edge);background:var(--fill);transition:color .25s,background-color .25s,border-color .25s}
+.archive-page .overview-mode button{border:0!important;background:transparent!important}
+.archive-page .topbar :is(.search-button,.menu,button){border:0!important;background:none!important;padding:4px 0!important;font:12px Arial,sans-serif!important;letter-spacing:.025em!important;color:var(--text)!important}
+/* The archive heading takes a landing star as a brief flare before its section number. */
+.catalogue-heading>span{position:relative}
+.catalogue-heading>span.is-struck:before{content:'';position:absolute;left:-13px;top:50%;width:5px;height:5px;margin-top:-2.5px;background:#fff8ec;box-shadow:0 0 6px #fff,0 0 14px #ffd9a688}
+@media(prefers-reduced-motion:no-preference){.catalogue-heading>span.is-struck:before{animation:star-flare .9s cubic-bezier(.2,.8,.2,1)}}
+/* The star is the feedback for a tap, so the platform's tap highlight is not needed on top of it. */
+.site-shell a,.site-shell button{-webkit-tap-highlight-color:transparent}
+/* Open space behind the night pages. */
+.cosmos{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.night-sky .cosmos{position:fixed}
+.cosmos canvas{position:absolute;inset:0;width:100%;height:100%}
+.archive-catalogue>.cosmos{z-index:-2}
+/* Labels keep their edge over bright nebula. */
+.star-destinations a,.star-strip button,.star-portals a,.star-map .scene-bottom{text-shadow:0 0 14px #050605,0 0 3px #050605}
