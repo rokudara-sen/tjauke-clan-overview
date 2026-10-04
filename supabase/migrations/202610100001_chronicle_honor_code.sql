@@ -18,6 +18,8 @@ declare doc_id text; doc_text text; found int;
 begin
  select count(*), min(id) into found, doc_id from public.library
   where id = 'DOC-2F08DD45-B36';
+ -- A database built fresh from the migrations holds no clan documents yet; there is nothing to align.
+ if found = 0 then raise notice 'Living Chronicle: document not present; nothing was changed'; return; end if;
  if found <> 1 then raise exception 'Living Chronicle: expected one matching document, found %', found; end if;
  select l.body into doc_text from public.library l where id = doc_id;
 
