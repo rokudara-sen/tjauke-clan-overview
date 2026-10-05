@@ -87,7 +87,11 @@ export async function decidePortrait(p:PendingPortrait,approve:boolean){
  if(!client)throw Error('Connect Supabase first.');
  if(!approve){await call<string|null>('decide_portrait',{portrait_id:p.id,approve:false,public_url:null});await client.storage.from('portrait-uploads').remove([p.path]);return;}
  const {data:blob,error}=await client.storage.from('portrait-uploads').download(p.path);if(error)throw error;
- const {error:upload}=await client.storage.from('portraits').upload(p.path,blob,{contentType:blob.type,upsert:true});if(upload)throw upload;
+ // A plain insert: overwriting would also need read and update rights on the public bucket, which administrators
+ // do not have. Paths are unique per upload, so a file already there is this same image from an approval that
+ // stopped part-way, and the approval carries on with it.
+ const {error:upload}=await client.storage.from('portraits').upload(p.path,blob,{contentType:blob.type});
+ if(upload&&!/already exists|duplicate/i.test(upload.message))throw upload;
  const url=client.storage.from('portraits').getPublicUrl(p.path).data.publicUrl;
  const previous=await call<string|null>('decide_portrait',{portrait_id:p.id,approve:true,public_url:url}).catch(async e=>{await client!.storage.from('portraits').remove([p.path]);throw e;});
  await client.storage.from('portrait-uploads').remove([p.path]);
