@@ -1,0 +1,52 @@
+/* Shared archive surfaces, independent of the page underneath the dialogs. */
+.site-shell .search,.site-shell .archive-index{--text:#ece8db;--text-3:#a29f94;--accent:#e2402b;box-sizing:border-box;background:#0a0b0a;color:var(--text);border:0;border-radius:0;box-shadow:none;padding:28px max(24px,6%);letter-spacing:0}
+.site-shell .search{inset:0;margin:0;width:100%;height:100dvh;max-height:none;max-width:none;overflow:hidden}
+.site-shell .search:before,.site-shell .search:after{display:none}
+.site-shell .search-top,.site-shell .index-top{display:flex;align-items:center;justify-content:space-between;gap:24px;min-height:40px;margin:0 0 48px;font:11px var(--mono);letter-spacing:0;color:#a29f94;flex:none}
+.site-shell .index-top button{color:#ece8db;background:transparent;border:1px solid #ece8db30;min-height:40px;letter-spacing:0}
+.site-shell .topbar .search .overlay-close{display:grid;place-items:center;width:40px;height:40px;padding:0!important;border:1px solid #ece8db30!important;color:#ece8db!important;background:transparent!important;flex:none}
+.site-shell .search .overlay-close:before,.site-shell .search .overlay-close:after{display:none}
+.site-shell .search-title{font:600 30px/1.2 var(--display);letter-spacing:0;margin:0 0 24px;text-transform:none;flex:none}
+.site-shell .search-field{display:flex;align-items:center;gap:18px;padding:0 0 16px;border-bottom:1px solid #ece8db40;flex:none}
+.site-shell .search-field>svg{color:#a29f94;flex:none}
+.site-shell .search-field:focus-within{border-bottom-color:#e2402b}
+.site-shell .topbar .search .search-field input[type=search]{width:100%;min-width:0;padding:6px 0;margin:0;border:0;font:400 28px/1.4 'Archivo',sans-serif;letter-spacing:0;outline:none;box-shadow:none;color:#ece8db;background:transparent}
+.site-shell .search-field input::placeholder{color:#827f75}
+.site-shell .search-summary{font:11px var(--mono);color:#a29f94;text-transform:uppercase;padding:24px 0 12px;flex:none}
+.site-shell .search ul{flex:1;min-height:0;padding:0;overflow:auto;overscroll-behavior:contain}
+.site-shell .search li{border-bottom:1px solid #ece8db1a;animation:none!important}
+.site-shell .search li a{display:grid;grid-template-columns:8px minmax(0,1fr) 20px;align-items:center;gap:18px;padding:18px 12px 18px 0;color:#ece8db;box-shadow:none;background:transparent}
+.site-shell .search li a:before{position:static;width:4px;height:4px;background:#827f75;transform:none;box-shadow:none;transition:background .2s}
+.site-shell .search li[aria-selected=true] a{background:#ece8db06;box-shadow:none}
+.site-shell .search li[aria-selected=true] a:before{background:#e2402b;transform:none;box-shadow:0 0 8px #e2402b66}
+.site-shell .search li a .search-result-copy{min-width:0;font:500 19px/1.4 'Archivo',sans-serif;overflow-wrap:anywhere}
+.site-shell .search li small{margin-top:5px;font:11px/1.5 var(--mono);color:#a29f94;white-space:normal;overflow-wrap:anywhere}
+.site-shell .search li a>svg{color:#827f75}
+.site-shell .search li[aria-selected=true] a>svg{color:#ece8db}
+.site-shell .search-note{padding:24px 0;font:14px/1.5 'Archivo',sans-serif;color:#a29f94;overflow-wrap:anywhere}
+.site-shell .archive-index nav{grid-template-columns:repeat(3,minmax(0,1fr));gap:40px}
+.site-shell .archive-index nav .nav-plain:last-child{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:40px}
+.site-shell .archive-index nav a{display:grid;grid-template-columns:8px minmax(0,1fr) auto;gap:14px;align-items:center;padding:15px 0!important;min-height:64px;border-bottom:1px solid #ece8db20;font:500 25px/1.3 'Archivo',sans-serif;letter-spacing:0;white-space:normal;transition:color .2s}
+.site-shell .archive-index nav a .nav-label{font:inherit;color:inherit;letter-spacing:0;overflow-wrap:anywhere;min-width:0}
+.site-shell .archive-index nav a .nav-count{display:flex;gap:8px;font:11px var(--mono);color:#a29f94;letter-spacing:0}
+.site-shell .archive-index nav a:before{position:static;display:block;width:4px;height:4px;margin:0;transform:none;background:transparent;box-shadow:none;transition:background .2s}
+.site-shell .archive-index nav a:is(:hover,:focus-visible,[aria-current=page]):before{background:#e2402b;transform:none;box-shadow:0 0 8px #e2402b66}
+.site-shell .archive-index nav a:is(:hover,:focus-visible,[aria-current=page]){color:#fff}
+.site-shell .archive-index .nav-heading{font:11px/1.5 var(--mono);color:#a29f94;letter-spacing:0;padding:0 0 14px}
+.site-shell .archive-index a:focus-visible,.site-shell .search .overlay-close:focus-visible{outline:1px solid #ece8db;outline-offset:4px}
+/* The ways in sit in one compact row above the sections, which carry the index. */
+.site-shell .archive-index nav .nav-ways{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:0 32px;margin-bottom:8px;padding-bottom:12px;border-bottom:1px solid #ece8db20}
+.site-shell .archive-index nav .nav-ways a{display:inline-flex;align-items:center;gap:10px;min-height:44px;padding:0!important;border:0;font:500 13px/1.3 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:#c9c5b8}
+.site-shell .archive-index nav .nav-ways a:hover,.site-shell .archive-index nav .nav-ways a:focus-visible{padding-left:0!important}
+.site-shell .archive-index nav .nav-ways a .nav-count{display:none}
+@media(max-width:700px){
+ .site-shell .search,.site-shell .archive-index{padding:20px}
+ .site-shell .search-top,.site-shell .index-top{margin-bottom:32px}
+ .site-shell .topbar .search .search-field input[type=search]{font-size:22px}
+ .site-shell .search li a{gap:12px;padding-block:16px}
+ .site-shell .search li a .search-result-copy{font-size:17px}
+ .site-shell .archive-index nav{grid-template-columns:1fr;gap:30px}
+ .site-shell .archive-index nav .nav-plain:last-child{grid-template-columns:1fr;gap:0}
+ .site-shell .archive-index nav a{font-size:22px;gap:12px;min-height:60px}
+}
+@media(prefers-reduced-motion:reduce){.site-shell .archive-index nav a,.site-shell .archive-index nav a:before,.site-shell .search li a:before{transition:none}}

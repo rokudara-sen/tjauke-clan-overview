@@ -7,7 +7,7 @@ import { reducedMotion } from './gl';
  * new one opens through it, so no hand-over passes through an empty or covered screen.
  * - A star falls only when a section is chosen from one of the three spatial pages (the mask, the star map,
  *   the archive): it shatters on the floor and the new page opens through the blast.
- * - Going back to the clan map, the current section's star lifts out as the page sinks, and drops into its slot.
+ * - Going back to the clan map, the current section's star arcs into its slot as the page sinks.
  * - Inside a page, a link deeper (a record) ignites where it was chosen and the new page opens out of that point;
  *   a link back up (a record to its section) collapses the page into the link. Moving sideways from one record to
  *   another is routine, so it crossfades like everything else.
@@ -30,6 +30,13 @@ export function commit(to:string){
 
 type ViewTransition={ready:Promise<void>;finished:Promise<void>};
 /**
+ * Resolves once the running hand-over is animating. The browser moves the page snapshots off the main thread, so
+ * heavy setup started after this cannot freeze them, while setup run inside the swap holds the old page still.
+ */
+let animating:Promise<void>=Promise.resolve();
+export const handedOver=()=>animating;
+const frame=()=>new Promise<void>(r=>requestAnimationFrame(()=>r()));
+/**
  * Runs `swap` inside a view transition and lets `animate` drive the old and new page snapshots.
  * Returns false (and does nothing) where view transitions are unavailable, so callers can fall back.
  */
@@ -38,7 +45,8 @@ export function morph(swap:()=>void,animate:(html:HTMLElement)=>void,variant='op
  if(!start||reducedMotion())return false;
  const html=document.documentElement;clearSnapshots();html.dataset.vt=variant;
  const t=start.call(document,swap);
- t.ready.then(()=>animate(html)).catch(()=>{});
+ // Two frames after the animation is created it is running on the compositor.
+ animating=t.ready.then(()=>{animate(html);}).then(frame).then(frame).catch(()=>{});
  t.finished.catch(()=>{}).finally(()=>{clearSnapshots();if(html.dataset.vt===variant)delete html.dataset.vt;});
  return true;
 }
@@ -101,7 +109,7 @@ export function interceptLinks(root:Document){
   // A link to the page already showing only closes the dialog it was chosen from.
   if(to===location.hash){const d=a.closest('dialog');if(d)closeDialog(d,a);return;}
   // Only links inside the spatial pages themselves carry a star; the header, index and search do not.
-  const star=!!a.closest('.mask-home,.star-map,.archive-catalogue')&&to.split('/').length===2;
+  const star=!!a.closest('.mask-home,.star-map')&&to.split('/').length===2;
   // Links within an inner page's content ignite (deeper) or collapse (back up); workspaces switch tabs quietly.
   const content=!star&&!!a.closest('.archive-page #main')&&!a.closest('.workspace');
   const up=location.hash.startsWith(to+'/')||a.classList.contains('back'),sideways=location.hash.split('/').length>2&&to.split('/').length>2;

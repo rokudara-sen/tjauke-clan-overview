@@ -1,17 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
-import { active, hallTrophies, type Dataset, type Kind } from './model';
-import { href } from './Visuals';
+import { useEffect, useRef } from 'react';
+import { active, type Dataset } from './model';
 import { buffer, context, ease, fit, follow, program, reducedMotion } from './gl';
 import { navigate } from './transition';
 import { setDock } from './dock';
 
-const sections: {route:string;name:string;kind?:Kind}[] = [
- {route:'members',name:'Hunters',kind:'members'}, {route:'houses',name:'Households',kind:'houses'},
- {route:'hunts',name:'Undertakings',kind:'hunts'}, {route:'trophies',name:'Trophy hall',kind:'trophies'},
- {route:'chronicle',name:'History',kind:'chronicle'}, {route:'library',name:'Documents',kind:'library'},
- {route:'glossary',name:'Glossary',kind:'glossary'}, {route:'politics',name:'Politics',kind:'clans'},
- {route:'duties',name:'Duties',kind:'duties'}, {route:'forum',name:'Forum'},
-];
 const BONE=[205,202,192],NIGHT=[10,11,10];
 /** The sculpted mask is kept between visits so returning home does not sculpt it again. */
 let sculpted:Float32Array|null=null;
@@ -44,15 +36,13 @@ const FRAGMENT=`
 precision mediump float;uniform vec3 u_ink;uniform vec3 u_red;uniform float u_alpha;uniform float u_glow;varying float v_lens;varying float v_show;
 void main(){vec3 c=mix(u_ink,u_red,v_lens*u_glow);float a=u_alpha*(v_lens>.5?.95:.86)*min(1.0,v_show);gl_FragColor=vec4(c*a,a);}`;
 
-/** Home: the clan mask with every section radiating from it. It watches the pointer, and a light follows it across the surface. */
+/** Home: the clan mask, the entrance to the clan map. It watches the pointer, and a light follows it across the surface.
+ * Sections are not offered here; the map is where they are explored, and the Index reaches them directly. */
 export function MaskHome({data,ready}:{data:Dataset;ready:boolean}){
- const root=useRef<HTMLElement>(null),glCanvas=useRef<HTMLCanvasElement>(null),lineCanvas=useRef<HTMLCanvasElement>(null),links=useRef<(HTMLAnchorElement|null)[]>([]);
- const hovered=useRef<number|null>(null),dive=useRef<()=>void>(()=>{});
- const [caption,setCaption]=useState<string|null>(null);
+ const root=useRef<HTMLElement>(null),glCanvas=useRef<HTMLCanvasElement>(null),lineCanvas=useRef<HTMLCanvasElement>(null);
+ const primed=useRef(false),dive=useRef<()=>void>(()=>{});
  const terms=useRef<string[]>([]);
  useEffect(()=>{terms.current=ready?active(data.glossary).map(g=>String(g.name||'').trim()).filter(Boolean).slice(0,7):[];},[data,ready]);
- const counts=sections.map(s=>!ready||!s.kind?0:s.route==='trophies'?hallTrophies(data).length:active(data[s.kind]).length);
- const hover=(i:number|null)=>{hovered.current=i;setCaption(i===null?null:sections[i].name);};
  useEffect(()=>{
   const el=root.current!,gc=glCanvas.current!,lc=lineCanvas.current!,ctx=lc.getContext('2d')!,shell=el.closest('.site-shell') as HTMLElement|null;
   const gl=context(gc);let worker:Worker|null=null,points:ReturnType<typeof buffer>|null=null,shader:ReturnType<typeof program>|null=null;
@@ -102,16 +92,14 @@ export function MaskHome({data,ready}:{data:Dataset;ready:boolean}){
    el.style.backgroundColor=`rgb(${BONE.map((v,i)=>Math.round(v+(NIGHT[i]-v)*night))})`;
    shell?.classList.toggle('scene-night',night>.5);
    const nx=inside?(mx/width-.5)*2:0,ny=inside?(my/height-.5)*2:0;
-   // Look at the pointer, or at the hovered section.
-   let lookX=nx*.5,lookY=-ny*.32;
-   const h=hovered.current;
-   if(h!==null){const a=h/sections.length*Math.PI*2-2.2;lookX=Math.cos(a)*.55;lookY=-Math.sin(a)*.35;}
+   // Look at the pointer, or down at the way in while it is pointed at.
+   const lookX=primed.current?0:nx*.5,lookY=primed.current?-.3:-ny*.32;
    const idle=calm||still?0:Math.sin(t*.4)*.06;
    yaw=follow(yaw,(diving?0:lookX)+idle-.04,diving?6:3.2,dt);pitch=follow(pitch,(diving?0:lookY)+.04,diving?6:3.2,dt);
    // The light sits where the pointer is, so moving it sweeps the shading over the mask.
    lightX=follow(lightX,inside?nx*1.15:-.55,4,dt);lightY=follow(lightY,inside?ny*1.15:-.5,4,dt);
    tilt.x=follow(tilt.x,still?0:-ny*.2,3,dt);tilt.y=follow(tilt.y,still?0:nx*.26,3,dt);
-   glow=follow(glow,h!==null?.85:inside?.18:0,5,dt);flare=Math.max(0,flare-dt*.9);stir=follow(stir,0,1.6,dt);
+   glow=follow(glow,primed.current?.85:inside?.18:0,5,dt);flare=Math.max(0,flare-dt*.9);stir=follow(stir,0,1.6,dt);
    if(readyAt&&!still)assemble=Math.min(1,(now-readyAt)/1700);
    const zoom=1+flyE*flyE*16,scale=base*zoom,focusY=.06,centerY=cy+focusY*base*(1-zoom);centerX=cx;centerY0=centerY;scaleNow=scale;
    const intro=still?1:Math.min(1,t/1.6),retract=1-ease(Math.min(1,fly*1.8));
@@ -126,24 +114,11 @@ export function MaskHome({data,ready}:{data:Dataset;ready:boolean}){
     gl.uniform3f(u('u_ink'),ink[0],ink[1],ink[2]);gl.uniform3f(u('u_red'),.68,.16,.1);gl.uniform1f(u('u_alpha'),Math.min(1,assemble*3)*(1-Math.max(0,(flyE-.88)/.12)));gl.uniform1f(u('u_glow'),Math.max(glow,flare));
     gl.drawArrays(gl.POINTS,0,points.count);
    }
-   // Radial sections ride a tilted ring that leans with the pointer, so the whole hub feels three dimensional.
+   // Glossary terms ride a tilted ring that leans with the pointer, so the mask sits in depth.
    ctx.clearRect(0,0,width,height);
    const rx=width*(mobile?.36:.34),ry=height*(mobile?.29:.32),ct=Math.cos(tilt.x),st=Math.sin(tilt.x),cyw=Math.cos(tilt.y),syw=Math.sin(tilt.y);
    const project=(a:number,r:number)=>{const x=Math.cos(a)*rx*r,y=Math.sin(a)*ry*r,x1=x*cyw,z1=-x*syw,y1=y*ct-z1*st,z2=y*st+z1*ct,p=1400/(1400-z2);return {x:cx+x1*p,y:cy+y1*p,p};};
    const halo=(x:number,y:number)=>{const ox=x-cx,oy=y-cy,k=Math.min(.9,1/Math.hypot(ox/(base*1.12),oy/(base*1.3)));return {x:cx+ox*k,y:cy+oy*k};};
-   sections.forEach((_,i)=>{
-    const a=i/sections.length*Math.PI*2-2.2,end=project(a,1),start=halo(end.x,end.y),link=links.current[i];
-    const grow=ease(Math.max(0,Math.min(1,(t-.15-i*.05)/.8)))*retract,fade=Math.max(0,Math.min(1,(t-.55-i*.05)/.45))*retract;
-    // Labels lean towards a nearby pointer.
-    const dx=mx-end.x,dy=my-end.y,pull=Math.max(0,1-Math.hypot(dx,dy)/110)*.22;
-    if(link){link.style.transform=`translate3d(${end.x+dx*pull}px,${end.y+dy*pull}px,0) translate(-50%,-50%) scale(${end.p.toFixed(3)})`;link.style.opacity=String(fade);}
-    if(grow<.002)return;
-    const tx=start.x+(end.x-start.x)*.93*grow,ty=start.y+(end.y-start.y)*.93*grow,on=h===i;
-    ctx.beginPath();ctx.moveTo(start.x,start.y);ctx.lineTo(tx,ty);ctx.strokeStyle=on?'rgba(155,43,29,.75)':`rgba(30,31,27,${.36*(1-night)})`;ctx.lineWidth=on?1:.7;ctx.stroke();
-    // A hovered section's line becomes a stream of particles flowing into the mask.
-    if(on)for(let n=0;n<18;n++){const f=((n/18)+(calm?0:t*.45))%1,px=tx+(start.x-tx)*f,py=ty+(start.y-ty)*f,j=Math.sin(n*12.9+t*3)*2.2*(1-f);
-     ctx.fillStyle=`rgba(155,43,29,${.9*(1-f*.6)})`;ctx.fillRect(px+j,py-j,1.8,1.8);}
-   });
    if(terms.current.length&&!mobile){
     const tf=Math.max(0,Math.min(1,(t-1.1)/.8))*retract*(1-night);
     ctx.font='9px "IBM Plex Mono",ui-monospace,monospace';ctx.textAlign='center';ctx.textBaseline='middle';
@@ -160,15 +135,15 @@ export function MaskHome({data,ready}:{data:Dataset;ready:boolean}){
    // The context belongs to the canvas, which a remount reuses, so release only what this mount created.
    if(gl){if(points)gl.deleteBuffer(points.buffer);if(shader)gl.deleteProgram(shader.p);}};
  },[]);
- return <section ref={root} className="mask-home" tabIndex={0} aria-label="Tjau’ke clan mask. Choose a section, or scroll down to enter the clan map." onClick={e=>{
-   // A click on the mask itself (not a section) dives into the clan.
+ return <section ref={root} className="mask-home" tabIndex={0} aria-label="Tjau’ke clan mask. Scroll down or choose Enter the clan to open the clan map." onClick={e=>{
+   // A click on the mask itself dives into the clan.
    if((e.target as HTMLElement).closest('a,button'))return;const b=e.currentTarget.getBoundingClientRect(),x=e.clientX-b.left-b.width/2,y=e.clientY-b.top-b.height/2;
    if(Math.abs(x)<b.width*.1&&Math.abs(y)<b.height*.2)dive.current();}}>
   <canvas ref={lineCanvas} className="mask-lines" aria-hidden="true"/>
   <canvas ref={glCanvas} className="mask-points" aria-hidden="true"/>
   <h1 className="sr-only">Tjau’ke clan archive</h1>
-  <nav className="mask-sections" aria-label="Clan sections">{sections.map((s,i)=><a key={s.route} ref={el=>{links.current[i]=el;}} href={href(s.route)} onMouseEnter={()=>hover(i)} onMouseLeave={()=>hover(null)} onFocus={()=>hover(i)} onBlur={()=>hover(null)}><span>{s.name}</span>{ready&&s.kind&&<small>{counts[i]} published</small>}</a>)}</nav>
-  <div className="mask-caption" aria-hidden="true">{caption?caption.toUpperCase():'TJAU’KE'}</div>
-  <div className="scene-bottom"><span>YAUTJA CLAN · CMU</span><button type="button" className="scene-enter" onClick={()=>dive.current()}>Scroll to enter the clan ↓</button></div>
+  {/* Pointing at the way in turns the mask towards it and lights the lenses. */}
+  <button type="button" className="mask-enter" onClick={()=>dive.current()} onMouseEnter={()=>{primed.current=true;}} onMouseLeave={()=>{primed.current=false;}} onFocus={()=>{primed.current=true;}} onBlur={()=>{primed.current=false;}}><span>Enter the clan</span><small>or scroll</small></button>
+  <div className="scene-bottom"><span>YAUTJA CLAN · CMU</span></div>
  </section>;
 }

@@ -15,20 +15,21 @@
 .archive-page .page-location{font:11px var(--mono);letter-spacing:.16em;color:var(--text-3);display:flex;align-items:center;gap:10px}
 .archive-page .page-location{min-height:14px}
 /* The page's star: unlit until the travelling star lands in it, then it flares and keeps a steady glow. */
-.page-star{position:relative;display:inline-block;width:6px;height:6px;margin-right:4px;background:#e6e2d540;flex:none;transition:background .3s,box-shadow .3s,transform .3s cubic-bezier(.34,1.56,.64,1)}
+.page-star{position:relative;display:inline-block;width:6px;height:6px;margin-right:4px;background:transparent;flex:none;transition:background .12s,box-shadow .12s,transform .3s cubic-bezier(.34,1.56,.64,1)}
 .page-star:before,.page-star:after{content:'';position:absolute;left:50%;top:50%;background:#fff5e2;opacity:0;pointer-events:none}
 .page-star:before{width:34px;height:1px;margin:-.5px 0 0 -17px}.page-star:after{width:1px;height:34px;margin:-17px 0 0 -.5px}
 .page-star.is-lit{background:#fff8ec;box-shadow:0 0 6px #fff,0 0 16px #ffd9a688}
 .page-star:hover,.page-star:focus-visible{transform:scale(1.5);text-decoration:none}.page-star:hover:before,.page-star:hover:after,.page-star:focus-visible:before,.page-star:focus-visible:after{opacity:.35}
 .page-star:focus-visible{outline:1px solid var(--accent);outline-offset:5px}
 @media(prefers-reduced-motion:no-preference){.page-star.is-lit{animation:star-flare .9s cubic-bezier(.2,.8,.2,1)}.page-star.is-lit:before,.page-star.is-lit:after{animation:star-cross .9s cubic-bezier(.2,.8,.2,1)}
- @keyframes star-flare{0%{box-shadow:0 0 30px 10px #fff,0 0 80px 24px #ffd9a6aa}100%{box-shadow:0 0 6px #fff,0 0 16px #ffd9a688}}
- @keyframes star-cross{0%{opacity:1;transform:scale(2.4)}100%{opacity:0;transform:scale(1)}}}
+ @keyframes star-flare{0%{box-shadow:0 0 10px 2px #fff,0 0 24px 5px #ffd9a666}100%{box-shadow:0 0 6px #fff,0 0 16px #ffd9a688}}
+ @keyframes star-cross{0%{opacity:.45;transform:scale(1)}100%{opacity:0;transform:scale(1)}}}
 .archive-page .page-heading{position:relative;border:0;padding-bottom:30px}
 .archive-page .page-heading:after{content:'';position:absolute;left:0;right:0;bottom:0;height:1px;background:var(--line-strong);transform-origin:0 50%}
 .archive-page .page-heading h1,.archive-page .record-head h1{text-wrap:balance}
 @media(prefers-reduced-motion:no-preference){
- .archive-page .page-heading h1,.archive-page .record-head h1{animation:heading-rise 1s cubic-bezier(.2,.8,.2,1) .15s backwards}
+ .archive-page .page-heading h1,.archive-page .record-head h1{animation:heading-rise 1s cubic-bezier(.2,.8,.2,1) .15s backwards;will-change:transform}
+ /* The heading keeps the layer it rose on: dropping it when the rise ends redraws the text a fraction of a pixel off, a visible jump. */
  .archive-page .page-heading:after{animation:rule-draw 1.2s cubic-bezier(.76,0,.24,1) .3s backwards}
  @keyframes heading-rise{from{clip-path:inset(0 0 100% 0);transform:translateY(.35em)}to{clip-path:inset(0 0 -20% 0);transform:none}}
  @keyframes rule-draw{from{transform:scaleX(0)}}
@@ -126,9 +127,9 @@
 .archive-index nav a:hover:before,.archive-index nav a:focus-visible:before{transform:scale(1)}
 @media(prefers-reduced-motion:no-preference){
  .archive-index[open] nav a{animation:index-rise .7s cubic-bezier(.2,.8,.2,1) backwards}
- .archive-index[open] nav .nav-plain:first-child a:nth-child(2),.archive-index[open] nav .nav-group:nth-of-type(1) a{animation-delay:.12s}
- .archive-index[open] nav .nav-plain:first-child a:nth-child(3),.archive-index[open] nav .nav-group:nth-of-type(2) a{animation-delay:.18s}
- .archive-index[open] nav .nav-plain:first-child a:nth-child(4),.archive-index[open] nav .nav-group:nth-of-type(3) a{animation-delay:.24s}
+ .archive-index[open] nav .nav-group:nth-of-type(2) a{animation-delay:.12s}
+ .archive-index[open] nav .nav-group:nth-of-type(3) a{animation-delay:.18s}
+ .archive-index[open] nav .nav-group:nth-of-type(4) a{animation-delay:.24s}
  .archive-index[open] nav .nav-plain:last-child a{animation-delay:.3s}
  @keyframes index-rise{from{opacity:0;transform:translateY(30px)}}
  .archive-index[open]{animation:none}
@@ -152,17 +153,12 @@
 .archive-page :is(button:not(.text-button),.button-link,.stance){border:1px solid var(--edge);background:var(--fill);transition:color .25s,background-color .25s,border-color .25s}
 .archive-page .overview-mode button{border:0!important;background:transparent!important}
 .archive-page .topbar :is(.search-button,.menu,button){border:0!important;background:none!important;padding:4px 0!important;font:12px 'Archivo',sans-serif!important;letter-spacing:.025em!important;color:var(--text)!important}
-/* The archive heading takes a landing star as a brief flare before its section number. */
-.catalogue-heading>span{position:relative}
-.catalogue-heading>span.is-struck:before{content:'';position:absolute;left:-13px;top:50%;width:5px;height:5px;margin-top:-2.5px;background:#fff8ec;box-shadow:0 0 6px #fff,0 0 14px #ffd9a688}
-@media(prefers-reduced-motion:no-preference){.catalogue-heading>span.is-struck:before{animation:star-flare .9s cubic-bezier(.2,.8,.2,1)}}
 /* The star is the feedback for a tap, so the platform's tap highlight is not needed on top of it. */
 .site-shell a,.site-shell button{-webkit-tap-highlight-color:transparent}
 /* Open space behind the night pages. */
 .cosmos{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden}
 .night-sky .cosmos{position:fixed}
 .cosmos canvas{position:absolute;inset:0;width:100%;height:100%}
-.archive-catalogue>.cosmos{z-index:-2}
 /* Labels keep their edge over bright nebula. */
 .star-destinations a,.star-strip button,.star-portals a,.star-map .scene-bottom{text-shadow:0 0 14px #050605,0 0 3px #050605}
 /*
@@ -171,6 +167,10 @@
  * their own names, so they stay live above both page snapshots instead of freezing into the old one.
  */
 .fx-layer{view-transition-name:fx-layer}
+/* Keep the docking light live while the surrounding page is still revealing. */
+html[data-vt=open] .page-star,html[data-vt=rise] .page-star{view-transition-name:page-star}
+::view-transition-group(page-star),::view-transition-new(page-star){animation:none}
+::view-transition-old(page-star){display:none}
 .sight{view-transition-name:sight}
 ::view-transition-old(root),::view-transition-new(root){animation:none;mix-blend-mode:normal}
 ::view-transition-group(fx-layer),::view-transition-group(sight),::view-transition-new(fx-layer),::view-transition-new(sight){animation:none}
@@ -185,12 +185,4 @@ html[data-vt]:not([data-vt=open])::view-transition-old(root){background:#0a0b0a}
 @starting-style{.site-shell dialog[open]::backdrop{opacity:0}}
 /* The map comes up quickly enough to meet a returning star. */
 .star-map .star-canvas,.star-map .star-destinations{animation-duration:.8s}
-/* Archive covers answer the click at once: the new cover wipes in from the direction of travel inside its frame. */
-@media(prefers-reduced-motion:no-preference){
- .catalogue-covers .cover-in{animation:cover-enter .7s cubic-bezier(.16,1,.3,1) backwards}
- .catalogue-covers .cover-out{animation:cover-leave .55s cubic-bezier(.3,0,.2,1) forwards}
- .cover-in .cover-word>span{animation-duration:.6s;animation-timing-function:cubic-bezier(.16,1,.3,1)}
- @keyframes cover-enter{from{clip-path:inset(calc(50% + var(--dir)*50%) 0 calc(50% - var(--dir)*50%) 0);transform:translateY(calc(var(--dir)*28px))}to{clip-path:inset(0);transform:none}}
- @keyframes cover-leave{from{opacity:1}to{transform:translateY(calc(var(--dir)*-56px)) scale(.94);opacity:0;filter:brightness(.4)}}
-}
 .star-map.is-homecoming :is(.star-canvas,.star-destinations,.star-portals,.star-strip){animation:none}

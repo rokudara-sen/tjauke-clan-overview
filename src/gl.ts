@@ -1,13 +1,20 @@
 /** Minimal WebGL helpers for the home mask and the star map. Both scenes fall back to nothing if WebGL is missing. */
-export function program(gl:WebGLRenderingContext,vertex:string,fragment:string){
- const compile=(type:number,source:string)=>{const s=gl.createShader(type)!;gl.shaderSource(s,source);gl.compileShader(s);
-  if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))throw new Error(gl.getShaderInfoLog(s)||'shader');return s;};
- const p=gl.createProgram()!;gl.attachShader(p,compile(gl.VERTEX_SHADER,vertex));gl.attachShader(p,compile(gl.FRAGMENT_SHADER,fragment));gl.linkProgram(p);
- if(!gl.getProgramParameter(p,gl.LINK_STATUS))throw new Error(gl.getProgramInfoLog(p)||'link');
- const uniforms=new Map<string,WebGLUniformLocation|null>();
- const u=(name:string)=>{if(!uniforms.has(name))uniforms.set(name,gl.getUniformLocation(p,name));return uniforms.get(name)!;};
- return {p,u};
+export type Program={p:WebGLProgram;u:(name:string)=>WebGLUniformLocation|null};
+/**
+ * Compiles and links several programs. Every status query waits for the driver, so all programs are started
+ * before the first result is read: the driver works on them together and the page waits once, not per shader.
+ */
+export function programs(gl:WebGLRenderingContext,sources:[string,string][]):Program[]{
+ const shader=(type:number,source:string)=>{const s=gl.createShader(type)!;gl.shaderSource(s,source);gl.compileShader(s);return s;};
+ const built=sources.map(([vertex,fragment])=>{const p=gl.createProgram()!,v=shader(gl.VERTEX_SHADER,vertex),f=shader(gl.FRAGMENT_SHADER,fragment);gl.attachShader(p,v);gl.attachShader(p,f);gl.linkProgram(p);return {p,v,f};});
+ return built.map(({p,v,f})=>{
+  if(!gl.getProgramParameter(p,gl.LINK_STATUS))throw new Error(gl.getShaderInfoLog(v)||gl.getShaderInfoLog(f)||gl.getProgramInfoLog(p)||'link');
+  const uniforms=new Map<string,WebGLUniformLocation|null>();
+  const u=(name:string)=>{if(!uniforms.has(name))uniforms.set(name,gl.getUniformLocation(p,name));return uniforms.get(name)!;};
+  return {p,u};
+ });
 }
+export const program=(gl:WebGLRenderingContext,vertex:string,fragment:string)=>programs(gl,[[vertex,fragment]])[0];
 /** Uploads one interleaved float buffer and returns a binder that points the named attributes at it. */
 export function buffer(gl:WebGLRenderingContext,data:Float32Array,layout:[string,number][],usage:number=gl.STATIC_DRAW){
  const b=gl.createBuffer()!;gl.bindBuffer(gl.ARRAY_BUFFER,b);gl.bufferData(gl.ARRAY_BUFFER,data,usage);

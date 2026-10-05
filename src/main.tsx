@@ -6,4 +6,5 @@ import './experience.css';
 import './spatial.css';
 import './night.css';
 import './workspace.css';
+import './navigation.css';
 createRoot(document.getElementById('root')!).render(<React.StrictMode><App/></React.StrictMode>);

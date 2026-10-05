@@ -9,7 +9,9 @@ export type StarMap={stars:Star[];edges:[number,number][];linkStars:number[]};
  * follows the section's published record count, and a loose background field. Edges join each star to its
  * nearest neighbours; a section star also joins every star in its own cluster and its two nearest sections.
  */
+let cached:{key:string;map:StarMap}|null=null;
 export function starMap(records:number[]):StarMap{
+ const key=records.join(',');if(cached?.key===key)return cached.map;
  const stars:Star[]=[],linkStars:number[]=[],n=records.length;
  records.forEach((_,i)=>{
   // Golden-angle spiral over a sphere, jittered so sections never sit on a visible grid.
@@ -33,12 +35,14 @@ export function starMap(records:number[]):StarMap{
  const d2=(a:Star,b:Star)=>(a.x-b.x)**2+(a.y-b.y)**2+(a.z-b.z)**2;
  stars.forEach((s,i)=>{
   if(s.link!==null)return;
-  const near=stars.map((o,j)=>[d2(s,o),j] as const).filter(([,j])=>j!==i).sort((a,b)=>a[0]-b[0]);
-  near.slice(0,s.owner===null?2:1).forEach(([,j])=>join(i,j));
+  // The one or two nearest stars, found in a single pass; sorting every star for each star stalled the hand-over.
+  let a=-1,b=-1,da=Infinity,db=Infinity;
+  for(let j=0;j<stars.length;j++){if(j===i)continue;const d=d2(s,stars[j]);if(d<da){b=a;db=da;a=j;da=d;}else if(d<db){b=j;db=d;}}
+  if(a>=0)join(i,a);if(s.owner===null&&b>=0)join(i,b);
  });
  linkStars.forEach((li,i)=>{
   stars.forEach((s,j)=>{if(s.owner===i&&j!==li)join(li,j);});
   linkStars.filter(o=>o!==li).sort((a,b)=>d2(stars[li],stars[a])-d2(stars[li],stars[b])).slice(0,2).forEach(o=>join(li,o));
  });
- return {stars,edges,linkStars};
+ const map={stars,edges,linkStars};cached={key,map};return map;
 }

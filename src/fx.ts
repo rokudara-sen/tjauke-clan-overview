@@ -1,5 +1,6 @@
 import { reducedMotion } from './gl';
 import { getDock } from './dock';
+import { arrivalProgress, returnPosition } from './flight';
 import { morph, NEW, OLD } from './transition';
 
 /**
@@ -8,8 +9,8 @@ import { morph, NEW, OLD } from './transition';
  * The star is the section. Opening a page, its star falls under gravity, aimed to strike the floor directly
  * below the place it will rest; the blast tears a hole in the old page and the new page shows through it while
  * the old one is pushed away, and the star bounces in one solved arc into the page's dock (the breadcrumb star).
- * Returning to the clan map, the star lifts away as the page sinks, the map opens behind it, and the star drops
- * back into its own slot. Smaller relatives: a record link ignites and its page blooms out of that point; a link
+ * Returning to the clan map, the page sinks while its star follows a visible arc back into its own slot.
+ * Smaller relatives: a record link ignites and its page blooms out of that point; a link
  * back up collapses the page into the link. Nothing vanishes mid-air: shards leave the screen or fade out.
  *
  * The layer has its own view-transition name, so it keeps animating live above both page snapshots.
@@ -30,7 +31,7 @@ function layer(){
 function run(effect:Effect){
  effects.push(effect);if(frame)return;
  const tick=(now:number)=>{
-  const {ctx,w,h}=layer(),dt=Math.min(.033,(now-last)/1000);last=now;ctx.clearRect(0,0,w,h);
+  const {ctx,w,h}=layer(),dt=Math.min(.1,(now-last)/1000);last=now;ctx.clearRect(0,0,w,h);
   // One failing effect must not stop the loop (and strand a star mid-air), so each runs on its own.
   effects=effects.filter(e=>{try{return e(dt,ctx,w,h);}catch(err){console.error(err);busy=false;opening=false;carrying=false;return false;}});
   frame=effects.length?requestAnimationFrame(tick):0;if(!frame)ctx.clearRect(0,0,w,h);
@@ -116,21 +117,26 @@ export function shatter(from:Point,swap:()=>void,{tone='night',onFall,size=1}:{t
  const strike=from.x+(aim.x-from.x)*.35,star={x:from.x,y:from.y,vx:(strike-from.x)/T,vy,r:2.2*size};
  const bits:Bit[]=[],path:Point[]=[];
  // `clock` times the current phase; `elapsed` runs from the start and times the reveal.
- let phase:'fall'|'struck'|'hop'|'settle'|'gone'='fall',clock=0,elapsed=0,impact=0,reveal=-1,landed=false,fallback=false,live=false,dim=0,blast:Animation|null=null;
+ let phase:'fall'|'hop'|'settle'|'gone'='fall',clock=0,elapsed=0,impact=0,reveal=-1,fallback=false,live=false,dim=0,blast:Animation|null=null;
  let target:Point={x:0,y:0},flight={x:0,y:0,vx:0,vy:0,T:1,aimed:{x:0,y:0}};
  const dockPoint=()=>fallback?target:(getDock()?.point()||target);
  run((dt,ctx)=>{
   clock+=dt;elapsed+=dt;
   if(phase==='fall'){
-   star.vy+=G*dt;star.x+=star.vx*dt;star.y+=star.vy*dt;star.r=Math.min(4.2*size,star.r+dt*3);
+   const t=Math.min(clock,T);
+   star.x=from.x+star.vx*t;star.y=from.y+vy*t+G*t*t/2;star.r=Math.min(4.2*size,star.r+dt*3);
    // The camera follows the star down, so the page rises and dims behind it.
    const k=clamp((star.y-from.y)/Math.max(1,floor-from.y)),lift=-Math.min(240,Math.max(0,star.y-from.y)*.4);
    lifted.forEach(m=>{m.style.transform=`translate3d(0,${lift}px,0)`;});
    onFall?.(k);dim=smooth(k)*.4;
    path.push({x:star.x,y:star.y});if(path.length>12)path.shift();trail(ctx,path,4*size);
    if(Math.random()<.5)bits.push(spark(star.x,star.y,60,2.2));
-   if(star.y>=floor){
-    star.y=floor;phase='struck';impact=elapsed;path.length=0;opening=false;
+   if(clock>=T){
+    star.y=floor;phase='hop';impact=elapsed;path.length=0;opening=false;
+    // Launch at impact using the known breadcrumb layout; refine the target during flight.
+    const time=hop(star,aim);
+    target=aim;flight={x:star.x,y:floor,vx:(aim.x-star.x)/time,vy:(aim.y-floor-G*time*time/2)/time,T:time,aimed:{...aim}};
+    clock-=T;
     const p={x:star.x,y:floor},far=reach(p,w,h)*1.1,origin=`${p.x}px ${p.y}px`;
     const open=()=>{lifted.forEach(m=>{m.style.transform='';});swap();};
     // The old page stays on screen, dimmed as it was during the fall; the new one shows through the torn hole.
@@ -147,10 +153,10 @@ export function shatter(from:Point,swap:()=>void,{tone='night',onFall,size=1}:{t
    } else drawStar(ctx,star.x,star.y,star.r);
   }
   // Until the page snapshots take over, the dimming is painted here so the old page does not brighten for a frame.
-  if(reveal<0&&dim>0){ctx.fillStyle=`rgba(${cover},${dim})`;ctx.fillRect(0,0,w,h);}
+  if(reveal===-1&&dim>0){ctx.fillStyle=`rgba(${cover},${dim})`;ctx.fillRect(0,0,w,h);}
   if(reveal>=0){
    const k=progress(blast,BLAST*1000)??(elapsed-reveal)/BLAST;
-   if(k<1){const pts=holeAt({x:star.x,y:floor},reach({x:star.x,y:floor},w,h)*1.1,k),edge=()=>{ctx.beginPath();pts.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));ctx.closePath();};
+   if(k<1){const pts=holeAt({x:strike,y:floor},reach({x:strike,y:floor},w,h)*1.1,k),edge=()=>{ctx.beginPath();pts.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));ctx.closePath();};
     if(!live){
      // Without view transitions, a cover in the old page's dimmed tone stands in for it while the hole widens.
      ctx.save();ctx.fillStyle=`rgb(${cover})`;ctx.fillRect(0,0,w,h);ctx.globalCompositeOperation='destination-out';edge();ctx.fill();ctx.restore();
@@ -161,30 +167,21 @@ export function shatter(from:Point,swap:()=>void,{tone='night',onFall,size=1}:{t
     ctx.strokeStyle=`rgba(255,244,228,${(1-k)*.8})`;ctx.lineWidth=1.6*(1-k)+.4;ctx.stroke();ctx.restore();
    } else reveal=-2;
   }
-  if(phase!=='fall')glow(ctx,star.x,floor,140,Math.max(0,1-(elapsed-impact)/.3)*.9);
-  if(phase==='struck'){
-   // It rests on the floor while the page arrives, then hops as soon as its dock is known.
-   const dock=getDock()?.point()||null,waited=elapsed-impact;
-   // A page that has a dock but is still building it (the mask sculpting) gets longer to be ready.
-   if(waited>.12&&(dock||waited>(getDock()?1.4:.45))){
-    fallback=!dock;target=dock||{x:w/2,y:h*.36};const time=hop(star,target);
-    flight={x:star.x,y:star.y,vx:(target.x-star.x)/time,vy:(target.y-star.y-G*time*time/2)/time,T:time,aimed:{...target}};
-    phase='hop';clock=0;
-   }
-   // Squashed by the impact, it springs back to round.
-   const s=clamp(waited/.12);drawStar(ctx,star.x,star.y-2*s,star.r*(1.4-.3*s));
-  } else if(phase==='hop'){
+  if(phase!=='fall')glow(ctx,strike,floor,140,Math.max(0,1-(elapsed-impact)/.3)*.9);
+  if(phase==='hop'){
    // One ballistic arc into the dock; if the dock shifts during the flight the arc bends towards it.
-   const t=Math.min(clock,flight.T),fix=smooth(t/flight.T),now=dockPoint();target=now;
+   const t=arrivalProgress(clock/flight.T)*flight.T,fix=smooth(t/flight.T),now=dockPoint();target=now;
    star.x=flight.x+flight.vx*t+(now.x-flight.aimed.x)*fix;star.y=flight.y+flight.vy*t+G*t*t/2+(now.y-flight.aimed.y)*fix;
    star.r=4*size+(2.6-4*size)*(t/flight.T);
    path.push({x:star.x,y:star.y});if(path.length>10)path.shift();trail(ctx,path,3);drawStar(ctx,star.x,star.y,star.r);
-   if(clock>=flight.T){phase='settle';clock=0;path.length=0;}
+   if(clock>=flight.T){
+    phase='settle';clock=0;path.length=0;carrying=false;fallback=!getDock()?.point();
+    if(fallback){for(let i=0;i<12;i++)bits.push(spark(target.x,target.y,180));}else getDock()?.land();
+   }
   } else if(phase==='settle'){
-   // It drops into place with one small settling bounce, then the dock takes over the light.
-   const q=Math.min(1,clock/.32),p=dockPoint(),bounce=Math.abs(Math.sin(q*Math.PI))*5*(1-q);
-   if(!landed&&q>.5){landed=true;carrying=false;if(fallback){for(let i=0;i<12;i++)bits.push(spark(p.x,p.y,180));}else getDock()?.land();}
-   drawStar(ctx,p.x,p.y-bounce,fallback?2.6*(1-q):2.6,landed?1-clamp((q-.5)/.5):1);
+   // Transfer the light at the contact point, without a second positional bounce.
+   const q=Math.min(1,clock/.12),p=dockPoint();
+   drawStar(ctx,p.x,p.y,fallback?2.6*(1-q):2.6,1-smooth(q));
    if(q>=1)phase='gone';
   }
   stepBits(bits,dt,ctx,w,h);
@@ -194,48 +191,35 @@ export function shatter(from:Point,swap:()=>void,{tone='night',onFall,size=1}:{t
  });
 }
 
-/** Returns to the clan map: the star lifts out of the page as it sinks away, the map opens behind, and the star drops back into its slot. */
+/** Returns along a visible arc while the outgoing page sinks away beneath the star. */
 export function ascend(from:Point,swap:()=>void){
  if(busy){if(!opening)swap();return;}
  if(reducedMotion()){swap();return;}
  busy=true;opening=true;
- const w=innerWidth,h=innerHeight,lifted=moving(),LIFT=.58,SWAP=.42,bits:Bit[]=[],path:Point[]=[];
- let phase:'lift'|'wait'|'drop'|'gone'='lift',clock=0,dropStart=0,swapAt=-1,live=false,shade=0,fallback=false,start:Point={x:0,y:-40},target:Point={x:w/2,y:h/2};
- // The star leaves the page at once (no pause): a short tug down, then it accelerates up and out of the screen.
- const rise=(k:number)=>easeIn(clamp((k-.06)/.94)),pos=(k:number)=>({x:from.x,y:from.y+Math.sin(clamp(k/.12)*Math.PI)*5-(from.y+60)*rise(k)});
+ const w=innerWidth,h=innerHeight,bits:Bit[]=[],path:Point[]=[];
+ let phase:'wait'|'fly'|'gone'='wait',clock=0,flightStart=0,ready=false,fallback=false,target:Point={x:w/2,y:h/2};
+ // Capture once at departure: the outgoing page has one uninterrupted sinking motion.
+ const open=()=>{opening=false;swap();};
+ const live=morph(open,html=>{
+  ready=true;
+  html.animate([{opacity:1,transform:'translateY(0)',filter:'brightness(1)'},{opacity:0,transform:'translateY(180px)',filter:'brightness(.5)'}],{duration:580,easing:'cubic-bezier(.2,.6,.35,1)',pseudoElement:OLD,fill:'both'});
+ },'rise');
+ if(!live){open();ready=true;}
  run((dt,ctx)=>{
   clock+=dt;
-  const k=clock/LIFT;
-  if(swapAt<0){
-   // The page sinks after the star and darkens.
-   const sink=smooth(clamp(k/.9));shade=sink*.55;
-   lifted.forEach(m=>{m.style.transform=`translate3d(0,${110*sink}px,0)`;});
-   if(k>=SWAP){
-    swapAt=clock;opening=false;
-    const open=()=>{lifted.forEach(m=>{m.style.transform='';});swap();};
-    // The sunk page keeps falling away and fades over the map, which is already there underneath.
-    live=morph(open,html=>{html.animate([{opacity:1,transform:'translateY(0)',filter:'brightness(1)'},{opacity:0,transform:'translateY(120px)',filter:'brightness(.5)'}],{duration:480,easing:'cubic-bezier(.4,0,.6,1)',pseudoElement:OLD,fill:'both'});},'rise');
-    if(!live)open();
-   }
-  }
-  // The dimming lifts as the map takes over; without view transitions it briefly hides the swap instead.
-  const after=swapAt<0?0:(clock-swapAt)/(live?.5:.45),a=swapAt<0?shade:live?shade*(1-smooth(clamp(after))):(after<.2?Math.max(shade,1):1-smooth(clamp((after-.2)/.8)));
+  const a=live?0:1-smooth(clamp(clock/.3));
   if(a>0){ctx.fillStyle=`rgba(10,11,10,${a})`;ctx.fillRect(0,0,w,h);}
-  if(phase==='lift'){
-   const p=pos(k);path.push(p);if(path.length>12)path.shift();trail(ctx,path,4);drawStar(ctx,p.x,p.y,2.6+rise(k)*1.6);
-   if(k>=1){phase='wait';path.length=0;}
-  } else if(phase==='wait'){
-   // The star waits above the screen until its slot on the map is known.
-   const dock=getDock()?.point()||null,waited=clock-LIFT;
-   if(swapAt>=0&&(dock||waited>.9)){fallback=!dock;target=dock||target;start={x:target.x+(from.x-target.x)*.3,y:-40};phase='drop';dropStart=clock;}
-  } else if(phase==='drop'){
-   // Falling back into place: it accelerates down and catches in its slot with a slight overshoot.
-   const p=clamp((clock-dropStart)/.7),now=fallback?target:(getDock()?.point()||target);target=now;
-   const f=p<.82?1.03*(p/.82)**2:1+.03*Math.cos((p-.82)/.18*Math.PI)*(1-(p-.82)/.18);
-   const x=start.x+(now.x-start.x)*easeOut(p),y=start.y+(now.y-start.y)*f;
+  if(phase==='wait'){
+   // Keep the star visible at departure while the map establishes its projected slot.
+   const dock=ready?getDock()?.point():null;
+   if(dock||clock>.9){fallback=!dock;target=dock||target;phase='fly';flightStart=clock;}
+   drawStar(ctx,from.x,from.y,2.6);
+  } else if(phase==='fly'){
+   const p=clamp((clock-flightStart)/.95),now=fallback?target:(getDock()?.point()||target);target=now;
+   const {x,y}=returnPosition(from,now,p,w,h);
    path.push({x,y});if(path.length>10)path.shift();trail(ctx,path,3);
    if(p>=1){if(fallback){for(let i=0;i<12;i++)bits.push(spark(x,y,180));}else{getDock()?.land();for(let i=0;i<10;i++)bits.push(spark(x,y,140));}phase='gone';}
-   else drawStar(ctx,x,y,(fallback?3.4*(1-p*.6):3.4-p*.8));
+   else drawStar(ctx,x,y,2.6+Math.sin(p*Math.PI)*.8);
   }
   stepBits(bits,dt,ctx,w,h);
   const done=phase==='gone'&&bits.length===0&&a<=0;

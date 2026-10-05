@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
-import { buffer, context, follow, program, reducedMotion } from './gl';
+import { handedOver } from './transition';
+import { buffer, context, follow, programs, reducedMotion, type Program } from './gl';
 
 /**
  * Open space around the viewer, not a sky seen from the ground: no haze, no twinkling, no meteors.
@@ -79,19 +80,24 @@ function galaxies(count:number){
  return out;
 }
 
-export function Cosmos({camera,intensity=1}:{camera?:{current:CosmosCamera};intensity?:number}){
+/** `defer` builds the field only once the current page hand-over is moving, so building it cannot freeze the hand-over. */
+export function Cosmos({camera,intensity=1,defer=false}:{camera?:{current:CosmosCamera};intensity?:number;defer?:boolean}){
  const ref=useRef<HTMLCanvasElement>(null);
  useEffect(()=>{
+  let stop:void|(()=>void),gone=false;const build=()=>{if(!gone)stop=setup();};
+  if(defer)void handedOver().then(build);else build();
+  return()=>{gone=true;stop?.();};
+  function setup(){
   const c=ref.current!,gl=context(c);if(!gl)return;
-  let far:ReturnType<typeof program>,vol:ReturnType<typeof program>,gal:ReturnType<typeof program>;
-  try{far=program(gl,FAR_V,STAR_F);vol=program(gl,VOL_V,STAR_F);gal=program(gl,GAL_V,GAL_F);}catch{return;}
+  let far:Program,vol:Program,gal:Program;
+  try{[far,vol,gal]=programs(gl,[[FAR_V,STAR_F],[VOL_V,STAR_F],[GAL_V,GAL_F]]);}catch{return;}
   const small=innerWidth<700,nFar=small?5000:11000,nVol=small?1400:2800,nDust=small?160:320,nGal=9;
   const farBuf=buffer(gl,farField(nFar),[['a_dir',3],['a_size',1],['a_bright',1],['a_temp',1]]);
   const volLayout:[string,number][]=[['a_pos',3],['a_size',1],['a_bright',1],['a_temp',1],['a_end',1]];
   const starBuf=buffer(gl,volume(nVol,BOX,1,1.6,1),volLayout),dustBuf=buffer(gl,volume(nDust,DUST_BOX,77,.6,.32),volLayout);
   const galBuf=buffer(gl,galaxies(nGal),[['a_dir',3],['a_size',1],['a_bright',1],['a_temp',1],['a_tilt',1],['a_ratio',1]]);
   const still=reducedMotion(),cam=[0,0,0],vel=[0,0,0],startScroll=scrollY;
-  let first=true,frame=0,last=performance.now(),mx=0,my=0,shiftX=0,shiftY=0,drift=0,flown=0,yaw=rand(3)*6,pitch=-.15;
+  let first=true,frame=0,last=performance.now(),mx=0,my=0,shiftX=0,shiftY=0,drift=0,flown=0,yaw=rand(3)*6,pitch=-.15,previousForward=0;
   const move=(e:PointerEvent)=>{mx=e.clientX/innerWidth-.5;my=e.clientY/innerHeight-.5;};
   addEventListener('pointermove',move,{passive:true});
   const draw=(now:number)=>{
@@ -113,12 +119,14 @@ export function Cosmos({camera,intensity=1}:{camera?:{current:CosmosCamera};inte
    const cy=Math.cos(yaw),sy=Math.sin(yaw),cp=Math.cos(pitch),sp=Math.sin(pitch);
    // The camera's forward and right directions in the world (the view rotation undone).
    const b=-cp,fx=-b*sy,fy=-sp,fz=b*cy,rx=cy,rz=sy;
-   const next=[fx*forward+rx*shiftX,fy*forward-shiftY,fz*forward+rz*shiftX];
+   // Orbit changes orientation, not the camera's position around an ever-growing travel radius.
+   const advance=first?0:forward-previousForward;previousForward=forward;
+   const next=view?[cam[0]+fx*advance,cam[1]+fy*advance,cam[2]+fz*advance]:[fx*forward+rx*shiftX,fy*forward-shiftY,fz*forward+rz*shiftX];
    // The first frame places the camera without a jump, so nothing streaks on arrival unless it should.
    if(first){first=false;cam.splice(0,3,...next);}
    for(let k=0;k<3;k++){vel[k]=follow(vel[k],(next[k]-cam[k])/dt,12,dt);cam[k]=next[k];}
    gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT);gl.enable(gl.BLEND);gl.blendFunc(gl.ONE,gl.ONE_MINUS_SRC_ALPHA);
-   const common=(p:ReturnType<typeof program>)=>{gl.useProgram(p.p);gl.uniform1f(p.u('u_yaw'),yaw);gl.uniform1f(p.u('u_pitch'),pitch);gl.uniform2f(p.u('u_res'),w,h);gl.uniform1f(p.u('u_focal'),focal);gl.uniform1f(p.u('u_dpr'),dpr);};
+   const common=(p:Program)=>{gl.useProgram(p.p);gl.uniform1f(p.u('u_yaw'),yaw);gl.uniform1f(p.u('u_pitch'),pitch);gl.uniform2f(p.u('u_res'),w,h);gl.uniform1f(p.u('u_focal'),focal);gl.uniform1f(p.u('u_dpr'),dpr);};
    common(gal);galBuf.bind(gal.p);gl.uniform1f(gal.u('u_alpha'),intensity);gl.drawArrays(gl.POINTS,0,nGal);
    common(far);farBuf.bind(far.p);gl.uniform1f(far.u('u_alpha'),intensity);gl.uniform1f(far.u('u_lines'),0);gl.drawArrays(gl.POINTS,0,nFar);
    // Near stars and dust; at speed they are drawn as streaks along the motion, otherwise as points.
@@ -126,7 +134,7 @@ export function Cosmos({camera,intensity=1}:{camera?:{current:CosmosCamera};inte
    const layer=(buf:ReturnType<typeof buffer>,count:number,box:number,sizeK:number,alpha:number)=>{
     common(vol);buf.bind(vol.p);gl.uniform3f(vol.u('u_cam'),cam[0],cam[1],cam[2]);gl.uniform3f(vol.u('u_vel'),vel[0],vel[1],vel[2]);
     gl.uniform1f(vol.u('u_box'),box);gl.uniform1f(vol.u('u_sizeK'),sizeK);gl.uniform1f(vol.u('u_alpha'),alpha*intensity);
-    if(speed>5&&!still){gl.uniform1f(vol.u('u_blur'),blur);gl.uniform1f(vol.u('u_lines'),1);gl.drawArrays(gl.LINES,0,count*2);}
+    if(!camera&&speed>5&&!still){gl.uniform1f(vol.u('u_blur'),blur);gl.uniform1f(vol.u('u_lines'),1);gl.drawArrays(gl.LINES,0,count*2);}
     gl.uniform1f(vol.u('u_blur'),0);gl.uniform1f(vol.u('u_lines'),0);gl.drawArrays(gl.POINTS,0,count*2);
    };
    layer(starBuf,nVol,BOX,14,1);layer(dustBuf,nDust,DUST_BOX,4,1);
@@ -137,6 +145,7 @@ export function Cosmos({camera,intensity=1}:{camera?:{current:CosmosCamera};inte
   const redraw=()=>{if(still){cancelAnimationFrame(frame);frame=requestAnimationFrame(draw);}};addEventListener('resize',redraw);
   return()=>{cancelAnimationFrame(frame);removeEventListener('pointermove',move);removeEventListener('resize',redraw);
    for(const x of [farBuf,starBuf,dustBuf,galBuf])gl.deleteBuffer(x.buffer);for(const x of [far,vol,gal])gl.deleteProgram(x.p);};
- },[camera,intensity]);
+  }
+ },[camera,intensity,defer]);
  return <div className="cosmos" aria-hidden="true"><canvas ref={ref} className="cosmos-stars"/></div>;
 }

@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState, type MouseEvent } from 'react';
 import { active, hallTrophies, type Dataset, type Kind } from './model';
 import { href } from './Visuals';
-import { buffer, context, fit, follow, program, reducedMotion } from './gl';
+import { buffer, context, fit, follow, programs, reducedMotion, type Program } from './gl';
 import { starMap } from './starMap';
-import { navigate, takeArrival } from './transition';
+import { handedOver, navigate, takeArrival } from './transition';
 import { Cosmos, type CosmosCamera } from './Cosmos';
 import { setDock } from './dock';
 
@@ -57,6 +57,11 @@ void main(){
 }`;
 const EDGE_F=`precision mediump float;varying float v_alpha;void main(){gl_FragColor=vec4(vec3(.9,.886,.835)*v_alpha,v_alpha);}`;
 
+type Box={x:number;y:number;w:number;h:number};
+const overlaps=(a:Box,b:Box)=>a.x<b.x+b.w&&b.x<a.x+a.w&&a.y<b.y+b.h&&b.y<a.y+a.h;
+/** Where a label may sit around its star, as the offset of its top-left corner: right, left, then above and below on either side. */
+const SLOTS=6;
+const slotOffset=(slot:number,w:number,h:number):[number,number]=>[slot%2?-w:0,[-h/2,-h/2,-h,-h,0,0][slot]];
 /** Clan: a 3D star map. Each section is a named star; small unlinked stars cluster around it by record count. */
 export function StarMapPage({data,ready}:{data:Dataset;ready:boolean}){
  const root=useRef<HTMLElement>(null),glCanvas=useRef<HTMLCanvasElement>(null),overlay=useRef<HTMLCanvasElement>(null),links=useRef<(HTMLAnchorElement|null)[]>([]);
@@ -67,12 +72,17 @@ export function StarMapPage({data,ready}:{data:Dataset;ready:boolean}){
  const counts=sections.map(s=>!ready||!s.kind?0:s.route==='trophies'?hallTrophies(data).length:active(data[s.kind]).length);
  const countKey=counts.join(',');
  useEffect(()=>{
+  // Arriving through the mask, the map is built once the dive's hand-over is moving, so building it cannot freeze the dive.
+  let stop:void|(()=>void),gone=false;const build=()=>{if(!gone)stop=setup();};
+  if(arrival==='mask')void handedOver().then(build);else build();
+  return()=>{gone=true;stop?.();};
+  function setup(){
   const el=root.current!,gc=glCanvas.current!,oc=overlay.current!,octx=oc.getContext('2d')!,gl=context(gc);
   // Without WebGL the sections are still listed, as plain links.
   if(!gl){setFlat(true);return;}
   const map=starMap(countKey.split(',').map(Number)),{stars,edges,linkStars}=map;
-  let starShader:ReturnType<typeof program>,edgeShader:ReturnType<typeof program>;
-  try{starShader=program(gl,STAR_V,STAR_F);edgeShader=program(gl,EDGE_V,EDGE_F);}catch{setFlat(true);return;}
+  let starShader:Program,edgeShader:Program;
+  try{[starShader,edgeShader]=programs(gl,[[STAR_V,STAR_F],[EDGE_V,EDGE_F]]);}catch{setFlat(true);return;}
   const starData=new Float32Array(stars.length*7);
   stars.forEach((s,i)=>starData.set([s.x,s.y,s.z,s.size*(s.link!==null?1.25:1),Math.sin(i*12.9898)*.5+.5,s.link!==null?1:0,i],i*7));
   const edgeData=new Float32Array(edges.length*12);
@@ -83,17 +93,19 @@ export function StarMapPage({data,ready}:{data:Dataset;ready:boolean}){
   // Camera: orbit angles with drag inertia and a distance the wheel travels along. A chosen star leaves the map and falls.
   // A star coming home finds the map already settled, so its slot holds still while it drops in.
   const homecoming=arrival?.startsWith('return:')?sections.findIndex(s=>s.route===arrival.slice(7)):-1;
-  let yaw=kept?.yaw??(arrival==='mask'?-.9:.5),pitch=kept?.pitch??.18,vy=0,vp=0,dist=kept?.dist??(arrival==='mask'?.3:still||homecoming>=0?2.9:5.5),goalDist=kept?.goalDist??2.9,alpha=kept?.alpha??(homecoming>=0?.85:0),px=0,py=0;
+  let yaw=kept?.yaw??.5,pitch=kept?.pitch??.18,vy=0,vp=0,dist=kept?.dist??(still||homecoming>=0?2.9:3.3),goalDist=kept?.goalDist??2.9,alpha=kept?.alpha??(homecoming>=0?.85:0),px=0,py=0;
   let drag:{x:number;y:number}|null=null,moved=0,active=-1,chosen=-1,returning=kept?kept.returning:homecoming,pulse=-1,fall=0,screens:{x:number;y:number;depth:number}[]=[];const focus=[0,0,0];
-  const resize=()=>{width=el.clientWidth;height=el.clientHeight;dpr=Math.min(devicePixelRatio||1,2);oc.width=width*dpr;oc.height=height*dpr;octx.setTransform(dpr,0,0,dpr,0,0);};
+  // Each label's measured size, chosen side of its star and eased offset; sizes are measured again after a resize.
+  const spots=sections.map(()=>({w:0,rest:0,h:0,slot:0,ox:0,oy:0,shown:0,fresh:true}));
+  const resize=()=>{width=el.clientWidth;height=el.clientHeight;dpr=Math.min(devicePixelRatio||1,2);oc.width=width*dpr;oc.height=height*dpr;octx.setTransform(dpr,0,0,dpr,0,0);spots.forEach(s=>{s.w=0;});};
   const observer=new ResizeObserver(resize);observer.observe(el);resize();
   const pointer=(e:PointerEvent)=>{const b=el.getBoundingClientRect();mx=e.clientX-b.left;my=e.clientY-b.top;inside=true;
-   if(drag){const dx=e.clientX-drag.x,dy=e.clientY-drag.y;drag={x:e.clientX,y:e.clientY};moved+=Math.abs(dx)+Math.abs(dy);vy=dx*.006;vp=dy*.004;yaw+=vy;pitch=Math.max(-1,Math.min(1,pitch+vp));}};
+   if(drag){const dx=e.clientX-drag.x,dy=e.clientY-drag.y;drag={x:e.clientX,y:e.clientY};moved+=Math.abs(dx)+Math.abs(dy);yaw+=dx*.003;pitch=Math.max(-1,Math.min(1,pitch+dy*.002));vy=Math.max(-.6,Math.min(.6,dx*.18));vp=Math.max(-.4,Math.min(.4,dy*.12));}};
   const down=(e:PointerEvent)=>{if((e.target as HTMLElement).closest('a,button')||e.button!==0)return;drag={x:e.clientX,y:e.clientY};moved=0;el.setPointerCapture(e.pointerId);el.classList.add('is-dragging');};
   const up=()=>{drag=null;el.classList.remove('is-dragging');};
   const leave=()=>{inside=false;};
   // The scroll that dived through the mask is still coasting when the map opens; it must not also travel the map.
-  const wheel=(e:WheelEvent)=>{e.preventDefault();if(chosen>=0||(arrival==='mask'&&performance.now()-begin<900))return;goalDist=Math.max(1.25,Math.min(4.4,goalDist+e.deltaY*(e.deltaMode===1?.05:.0028)));};
+  const wheel=(e:WheelEvent)=>{e.preventDefault();if(chosen>=0||(arrival==='mask'&&performance.now()-begin<900))return;goalDist=Math.max(2.1,Math.min(4.4,goalDist+e.deltaY*(e.deltaMode===1?.025:.0014)));};
   el.addEventListener('pointermove',pointer);el.addEventListener('pointerdown',down);el.addEventListener('pointerup',up);el.addEventListener('pointercancel',up);el.addEventListener('pointerleave',leave);el.addEventListener('wheel',wheel,{passive:false});
   // Choosing a section flies the camera into its star before the page opens.
   // Choosing a section detaches its star; the effects layer carries it down while the map tips up after it.
@@ -108,13 +120,13 @@ export function StarMapPage({data,ready}:{data:Dataset;ready:boolean}){
    frame=requestAnimationFrame(draw);
    const dt=Math.min(.05,(now-last)/1000);last=now;const t=(now-begin)/1000,calm=still;
    const nx=inside?(mx/width-.5)*2:0,ny=inside?(my/height-.5)*2:0;
-   if(!drag){yaw+=vy;pitch=Math.max(-1,Math.min(1,pitch+vp));vy*=Math.pow(.04,dt);vp*=Math.pow(.04,dt);if(!calm&&chosen<0)yaw+=dt*.035;}
-   px=follow(px,calm?0:nx*.14,2.5,dt);py=follow(py,calm?0:ny*.09,2.5,dt);
+   if(!drag){yaw+=vy*dt;pitch=Math.max(-1,Math.min(1,pitch+vp*dt));vy*=Math.pow(.0001,dt);vp*=Math.pow(.0001,dt);if(!calm&&chosen<0)yaw+=dt*.012;}
+   px=follow(px,calm?0:nx*.04,2.5,dt);py=follow(py,calm?0:ny*.025,2.5,dt);
    dist=follow(dist,goalDist,arrival==='mask'&&t<2?1.6:2.6,dt);
    alpha=follow(alpha,1,arrival==='mask'?1.4:3,dt);
    const yawNow=yaw+px,pitchNow=pitch+py-fall*fall*.5;
    // Open space turns with the map, and zooming flies the viewer through it (the dive from home arrives at speed).
-   camera.current={yaw:yawNow,pitch:pitchNow,travel:(2.9-dist)*5+(still?0:t*.2)};
+   camera.current={yaw:yawNow,pitch:pitchNow,travel:(2.9-dist)*2};
    fit(gl!,gc);gl!.clearColor(0,0,0,0);gl!.clear(gl!.COLOR_BUFFER_BIT);gl!.enable(gl!.BLEND);gl!.blendFunc(gl!.ONE,gl!.ONE_MINUS_SRC_ALPHA);
    // The section star nearest the pointer lights up, so the light follows the pointer across the map.
    screens=linkStars.map(si=>{const s=stars[si];const cy=Math.cos(yawNow),sy=Math.sin(yawNow),cp=Math.cos(pitchNow),sp=Math.sin(pitchNow),x=s.x-focus[0],y=s.y-focus[1],z=s.z-focus[2],a=x*cy+z*sy,b=z*cy-x*sy,d=y*cp-b*sp,zz=y*sp+b*cp,depth=dist-zz;
@@ -139,25 +151,42 @@ export function StarMapPage({data,ready}:{data:Dataset;ready:boolean}){
     octx.beginPath();octx.arc(p.x,p.y,10+pulse,0,Math.PI*2);octx.strokeStyle=`rgba(230,226,213,${.85*alpha})`;octx.lineWidth=.8;octx.stroke();
     octx.strokeRect(p.x+16,p.y+10,7,7);
     if(inside&&hovered.current===null&&!drag){octx.beginPath();octx.setLineDash([2,4]);octx.moveTo(mx,my);octx.lineTo(p.x,p.y);octx.strokeStyle=`rgba(194,65,47,${.6*alpha})`;octx.stroke();octx.setLineDash([]);}}
-   screens.forEach((p,i)=>{
-    const link=links.current[i];if(!link)return;
-    if(i===chosen||p.depth<.2||p.x<-120||p.x>width+120||p.y<-60||p.y>height+60){link.style.visibility='hidden';return;}
+   // Labels never overlap. The lit star is placed first, then nearer stars before farther ones; each label keeps its
+   // side of the star while it fits, otherwise tries the others, and a label with no free room fades out until its
+   // star comes forward or is lit.
+   const taken:Box[]=[],order=screens.map((_,i)=>i).sort((a,b)=>Number(b===active)-Number(a===active)||screens[a].depth-screens[b].depth);
+   for(const i of order){
+    const p=screens[i],link=links.current[i],spot=spots[i];if(!link)continue;
+    if(i===chosen||p.depth<.2||p.x<-120||p.x>width+120||p.y<-60||p.y>height+60){link.style.visibility='hidden';spot.shown=0;spot.fresh=true;continue;}
     const near=3.6/p.depth,grow=Math.max(.7,Math.min(width<650?1.4:2.1,near*(width<650?.8:1.05)));
-    link.style.visibility='visible';link.style.opacity=String(alpha*Math.max(.35,Math.min(1,near*.8)));
-    link.style.transform=`translate3d(${p.x}px,${p.y}px,0) scale(${grow.toFixed(3)}) translateY(-50%)`;
-   });
+    if(!spot.w){const label=link.firstElementChild as HTMLElement|null;spot.w=link.offsetWidth;spot.rest=(label?.offsetWidth||spot.w)+22;spot.h=link.offsetHeight;}
+    const w=(i===active?spot.w:spot.rest)*grow,h=spot.h*grow;
+    const fits=(slot:number)=>{const [ox,oy]=slotOffset(slot,w,h),box={x:p.x+ox,y:p.y+oy,w,h};return box.x>=4&&box.x+box.w<=width-4&&!taken.some(t=>overlaps(t,box))?box:null;};
+    let slot=spot.slot,box=fits(slot);
+    for(let k=0;!box&&k<SLOTS;k++)if(k!==spot.slot&&(box=fits(k)))slot=k;
+    // The lit label always shows, on its usual side if nothing else is free.
+    if(!box&&i===active){slot=spot.slot;const [ox,oy]=slotOffset(slot,w,h);box={x:p.x+ox,y:p.y+oy,w,h};}
+    if(box){taken.push(box);spot.slot=slot;}
+    const [tx,ty]=slotOffset(spot.slot,w,h);
+    if(spot.fresh||still){spot.ox=tx;spot.oy=ty;spot.fresh=false;}else{spot.ox=follow(spot.ox,tx,9,dt);spot.oy=follow(spot.oy,ty,9,dt);}
+    spot.shown=still?Number(!!box):follow(spot.shown,box?1:0,box?6:10,dt);
+    // A crowded label only fades, so it stays in the tab order; focusing it lights its star, which places it first.
+    link.style.visibility='visible';link.style.pointerEvents=spot.shown<.5?'none':'';link.style.opacity=String(alpha*spot.shown*Math.max(.35,Math.min(1,near*.8)));
+    link.style.transform=`translate3d(${(p.x+spot.ox).toFixed(1)}px,${(p.y+spot.oy).toFixed(1)}px,0) scale(${grow.toFixed(3)})`;
+   }
   }
   frame=requestAnimationFrame(draw);
   return()=>{view.current={yaw,pitch,dist,goalDist,alpha,returning};cancelAnimationFrame(frame);undock();observer.disconnect();el.removeEventListener('pointermove',pointer);el.removeEventListener('pointerdown',down);el.removeEventListener('pointerup',up);el.removeEventListener('pointercancel',up);el.removeEventListener('pointerleave',leave);el.removeEventListener('wheel',wheel);gl.deleteBuffer(starBuf.buffer);gl.deleteBuffer(edgeBuf.buffer);gl.deleteProgram(starShader.p);gl.deleteProgram(edgeShader.p);};
+  }
  },[countKey,arrival]);
  const choose=(i:number)=>(e:MouseEvent)=>{if(e.button!==0||e.metaKey||e.ctrlKey||e.shiftKey)return;e.preventDefault();fly.current(i);};
  const hover=(i:number|null)=>{hovered.current=i;};
  // A returning star finds the map already there; only arrivals from elsewhere fade it in.
  return <section ref={root} className={`star-map${flat?' is-flat':''}${arrival?.startsWith('return:')?' is-homecoming':''}`} aria-label="Clan star map. Drag to orbit, scroll to travel, choose a star to open its section.">
-  <Cosmos camera={camera} intensity={.7}/><canvas ref={glCanvas} className="star-canvas" aria-hidden="true"/><canvas ref={overlay} className="star-overlay" aria-hidden="true"/>
+  <Cosmos camera={camera} intensity={.7} defer={arrival==='mask'}/><canvas ref={glCanvas} className="star-canvas" aria-hidden="true"/><canvas ref={overlay} className="star-overlay" aria-hidden="true"/>
   <h1 className="sr-only">Clan map</h1>
   <nav className="star-destinations" aria-label="Clan sections">{sections.map((s,i)=><a key={s.route} ref={el=>{links.current[i]=el;}} href={href(s.route)} data-instant onClick={choose(i)} onMouseEnter={()=>hover(i)} onMouseLeave={()=>hover(null)} onFocus={()=>hover(i)} onBlur={()=>hover(null)} className={lit===i?'is-lit':undefined}><span>{s.name}</span>{ready&&s.kind&&<small>{counts[i]} published</small>}</a>)}</nav>
-  <div className="star-portals"><a href={href('dashboard')}>‹ Home</a><a href={href('archive')}>Catalogue ›</a></div>
+  <div className="star-portals"><a href={href('dashboard')}>‹ Home</a></div>
   <div className="star-strip" aria-hidden="true">{sections.map((s,i)=><button type="button" tabIndex={-1} key={s.route} className={lit===i?'is-lit':undefined} onMouseEnter={()=>hover(i)} onMouseLeave={()=>hover(null)} onClick={()=>fly.current(i)}>{s.name}</button>)}</div>
   <div className="scene-bottom"><span>{lit===null?<>Explore the clan · Drag to orbit<span className="map-travel">, scroll to travel</span></>:`${sections[lit].name}${ready&&sections[lit].kind?` · ${counts[lit]} published`:''}`}</span></div>
  </section>;
