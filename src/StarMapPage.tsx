@@ -26,14 +26,19 @@ void main(){
  vec3 r=rot(a_pos);float depth=u_dist-r.z;v_named=a_named;v_temp=fract(a_seed*7.13);
  if(depth<.12||abs(a_index-u_hidden)<.5){gl_Position=vec4(2.0);gl_PointSize=0.0;return;}
  vec2 s=screen(r,depth);float near=3.6/depth;vec2 d=s-u_mouse;
- // The pointer carries a light: stars near it swell and brighten.
- float lit=exp(-dot(d,d)/24000.0);
+ // The pointer carries a light: section stars near it swell and brighten. The small stars only brighten a little and
+ // never change size, so moving the pointer does not set the background pulsing.
+ float lit=exp(-dot(d,d)/24000.0),swell=lit*a_named;
  float twinkle=1.0;
  float on=step(abs(a_index-u_active),.5);
  gl_Position=clip(s);
  // The sprite is larger than the star so its halo (and, for sections, its spikes) has room.
- gl_PointSize=a_size*min(2.4,near)*(1.0+lit*.9+on*.8)*u_dpr*mix(2.6,5.5,a_named);
- v_alpha=u_alpha*clamp(mix(clamp(near*.7,.16,.95)*twinkle,1.0,a_named)+lit*.45,0.0,1.0);
+ float px=a_size*min(2.4,near)*(1.0+swell*.9+on*.8)*mix(2.6,5.5,a_named);
+ // A small star's sprite is kept wide enough that its core never shrinks below a pixel, dimmed by the area it gained,
+ // so it drifts across pixels smoothly instead of shimmering.
+ float grow=max(1.0,4.0/px)*(1.0-a_named)+a_named;
+ gl_PointSize=px*grow*u_dpr;
+ v_alpha=u_alpha*clamp(mix(clamp(near*.7,.16,.95)*twinkle,1.0,a_named)+lit*mix(.15,.45,a_named),0.0,1.0)/(grow*grow);
 }`;
 /** A star: a hot core, a soft halo, and for sections a pair of diffraction spikes. Colour runs from blue-white to warm. */
 const STAR_F=`precision mediump float;varying float v_alpha;varying float v_named;varying float v_temp;

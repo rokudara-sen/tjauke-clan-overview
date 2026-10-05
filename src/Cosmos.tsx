@@ -21,12 +21,19 @@ uniform float u_yaw;uniform float u_pitch;uniform vec2 u_res;uniform float u_foc
 vec3 rot(vec3 p){float cy=cos(u_yaw),sy=sin(u_yaw),cp=cos(u_pitch),sp=sin(u_pitch);float a=p.x*cy+p.z*sy,b=p.z*cy-p.x*sy;return vec3(a,p.y*cp-b*sp,p.y*sp+b*cp);}
 vec4 place(vec3 r){vec2 s=u_res*.5+r.xy*u_focal/(-r.z);vec2 c=s/u_res*2.0-1.0;return vec4(c.x,-c.y,0.0,1.0);}
 /** Star colour by temperature: blue-white through white and yellow to the occasional red dwarf. */
+/**
+ * Stars smaller than a pixel or two shimmer as the view drifts: their light lands on one pixel, then splits across
+ * two. Every star is drawn at least MIN_PX wide and dimmed by the area it gained, so it keeps its brightness but
+ * crosses pixels smoothly.
+ */
+const float MIN_PX=2.0;
+float settle(float px){return min(1.0,px*px/(MIN_PX*MIN_PX));}
 vec3 tint(float t){vec3 blue=vec3(.66,.77,1.0),white=vec3(1.0,.98,.95),gold=vec3(1.0,.82,.56),red=vec3(1.0,.58,.42);
  return t<.35?mix(blue,white,t/.35):t<.85?mix(white,gold,(t-.35)/.5):mix(gold,red,(t-.85)/.15);}`;
 const FAR_V=`attribute vec3 a_dir;attribute float a_size;attribute float a_bright;attribute float a_temp;
 uniform float u_alpha;varying vec3 v_color;varying float v_alpha;${VIEW}
 void main(){vec3 r=rot(a_dir);if(r.z>-.02){gl_Position=vec4(2.0);gl_PointSize=0.0;return;}
- gl_Position=place(r);gl_PointSize=a_size*u_dpr;v_color=tint(a_temp);v_alpha=a_bright*u_alpha;}`;
+ gl_Position=place(r);float px=a_size;gl_PointSize=max(px,MIN_PX)*u_dpr;v_color=tint(a_temp);v_alpha=a_bright*u_alpha*settle(px);}`;
 const VOL_V=`attribute vec3 a_pos;attribute float a_size;attribute float a_bright;attribute float a_temp;attribute float a_end;
 uniform vec3 u_cam;uniform vec3 u_vel;uniform float u_box;uniform float u_blur;uniform float u_sizeK;uniform float u_alpha;
 varying vec3 v_color;varying float v_alpha;${VIEW}
@@ -37,10 +44,10 @@ void main(){
  vec3 r=rot(p);float depth=-r.z;
  if(depth<.06){gl_Position=vec4(2.0);gl_PointSize=0.0;return;}
  gl_Position=place(r);
- gl_PointSize=clamp(a_size*u_sizeK/depth,.7,7.0)*u_dpr;
+ float px=clamp(a_size*u_sizeK/depth,.7,7.0);gl_PointSize=max(px,MIN_PX)*u_dpr;
  // Stars arrive out of the far dark and fade before they reach the eye, so none pop in or out.
  float fade=smoothstep(u_box*.5,u_box*.28,depth)*smoothstep(.06,.7,depth);
- v_color=tint(a_temp);v_alpha=a_bright*u_alpha*fade*(1.0-a_end*.92);
+ v_color=tint(a_temp);v_alpha=a_bright*u_alpha*fade*(1.0-a_end*.92)*settle(px);
 }`;
 const STAR_F=`precision mediump float;varying vec3 v_color;varying float v_alpha;uniform float u_lines;
 void main(){float a=v_alpha;if(u_lines<.5){float d=length(gl_PointCoord-.5)*2.0;a*=smoothstep(1.0,.0,d)*(.5+.5*smoothstep(.45,.0,d));}gl_FragColor=vec4(v_color*a,a);}`;
