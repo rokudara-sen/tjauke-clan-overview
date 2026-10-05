@@ -13,6 +13,8 @@ export const active = (rows: RecordData[]) => rows.filter(r=>!r.archived);
 export const ordered = (rows: RecordData[]) => [...rows].sort((a,b)=> order(a.order)-order(b.order)||String(a.name).localeCompare(String(b.name)));
 const order = (v: unknown) => v === '' || v == null || !Number.isFinite(Number(v)) ? Infinity : Number(v);
 export const openHunts = (rows: RecordData[]) => active(rows).filter(r=>['Planned','Declared','Underway'].includes(String(r.state)));
+export const readyForJudgment = (hunt: RecordData) => hunt.review==='Pending' && ['Completed','Withdrawn'].includes(String(hunt.state)) && String(hunt.account||'').trim().length>0;
+export const undertakingStatus = (hunt: RecordData) => hunt.review && hunt.review!=='Pending' ? `Claim ${String(hunt.review).toLowerCase()}` : readyForJudgment(hunt) ? 'Awaiting judgment' : String(hunt.state||'Planned');
 export const safeUrl = (value: unknown) => {try {const u=new URL(String(value));return ['http:','https:'].includes(u.protocol)?String(value):null;}catch{return null;}};
 export const normalize = (v: unknown) => String(v??'').replace(/[’‘]/g,"'").trim().toLowerCase();
 export function validate(kind: Kind, row: RecordData, data: Dataset): string[] {
