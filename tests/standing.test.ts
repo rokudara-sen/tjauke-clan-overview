@@ -1,7 +1,7 @@
 import { beforeAll,afterAll,it,expect,describe } from 'vitest';
 import { PGlite } from '@electric-sql/pglite';
 import fs from 'node:fs';
-import { clanAuthority,emptyData,isSeniorDuty,parseWorkbook,rankLabel,rankSteps,standingHistory,standingOf,validate,warriorRank,type RecordData } from '../src/model';
+import { clanAuthority,emptyData,hunterStandings,isSeniorDuty,parseWorkbook,rankLabel,rankSteps,standingHistory,standingOf,validate,warriorRank,type RecordData } from '../src/model';
 
 const row=(id:string,extra:Partial<RecordData>={}):RecordData=>({id,name:id,archived:false,published:true,...extra});
 
@@ -17,11 +17,37 @@ describe('warrior caste rank and senior standing',()=>{
   expect(rankSteps(row('e',{rank:'Elite'}),d).map(s=>s.rank)).toEqual(['Unblooded','Young Blood','Blooded','Elite']);
   expect(rankSteps(row('a',{standing:'Ancient'}),d).some(s=>s.reached||s.current)).toBe(false);
  });
- it('names a standing no longer held as former, from recorded history only',()=>{
+ it('does not infer loss of office from an earlier advancement',()=>{
   const d=emptyData();const keth=row('k',{standing:'Ancient'});
   d.promotions=[row('p1',{member:'k',rank:'Leader',date:'2026-01-01'}),row('p2',{member:'k',rank:'Ancient',date:'2026-02-01'})];
-  expect(standingHistory(keth,d).former).toEqual(['Clan Leader']);
-  expect(standingHistory(row('x',{standing:'Ancient'}),d).former).toEqual([]);
+  expect(standingHistory(keth,d).earlier).toEqual(['Clan Leader']);
+  expect(standingHistory(row('x',{standing:'Ancient'}),d).earlier).toEqual([]);
+ });
+ it('shows Council standing and explicit current clan command together without duplicating hunters',()=>{
+  const d=emptyData(),m=row('k',{rank:'Elite',standing:'Ancient',status:'Active'});d.members=[m];
+  d.duties=[row('command',{name:'Clan Leader',member:'k',status:'Active'}),row('duplicate',{name:'Clan Leader',member:'k',status:'Acting'})];
+  d.promotions=[row('p',{member:'k',rank:'Clan Leader'})];
+  expect(hunterStandings(m,d)).toEqual(['Ancient','Clan Leader']);
+  expect(rankLabel(m,d)).toBe('Elite · Ancient · Clan Leader');
+  expect(clanAuthority(d).leaders).toEqual([m]);expect(clanAuthority(d).ancients).toEqual([m]);
+  expect(standingHistory(m,d).earlier).toEqual([]);
+ });
+ it('does not derive current command from ended, archived, household-scoped or merely similar appointments',()=>{
+  const d=emptyData(),m=row('k',{standing:'Ancient',status:'Active'});d.members=[m];
+  for(const fields of [{end:'2026-01-01'},{archived:true},{status:'Ended'},{house:'h'},{name:'Assistant to the Clan Leader'}]){
+   d.duties=[row('command',{name:'Clan Leader',member:'k',status:'Active',...fields})];
+   expect(clanAuthority(d).leaders).toEqual([]);expect(hunterStandings(m,d)).toEqual(['Ancient']);
+  }
+  d.duties=[row('command',{name:'Clan Leader',member:'k',status:'Active'})];
+  for(const fields of [{status:'Deceased'},{status:'Departed'},{archived:true}]){
+   d.members=[{...m,...fields}];expect(clanAuthority(d).leaders).toEqual([]);
+  }
+ });
+ it('lists a current Clan Leader appointment even without stored senior standing',()=>{
+  const d=emptyData(),m=row('l',{rank:'Elite',status:'Active'});d.members=[m];
+  d.duties=[row('command',{name:' clan leader ',member:'l',status:'Active'})];
+  expect(hunterStandings(m,d)).toEqual(['Clan Leader']);expect(rankLabel(m,d)).toBe('Elite · Clan Leader');
+  expect(rankLabel(m)).toBe('Elite');expect(clanAuthority(d).leaders).toEqual([m]);
  });
  it('requires a warrior rank or a standing',()=>{
   const d=emptyData();

@@ -72,8 +72,15 @@ const legacyStanding:Record<string,string>={Elder:'Elder',Leader:'Clan Leader',A
 export const warriorRank=(m:RecordData|undefined)=>warriorRanks.includes(String(m?.rank))?String(m!.rank):'';
 /** Senior standing (Elder, Clan Leader, Ancient), or '' when the hunter holds none. */
 export const standingOf=(m:RecordData|undefined)=>seniorStandings.includes(String(m?.standing))?String(m!.standing):legacyStanding[String(m?.rank)]||'';
-/** Warrior caste rank and senior standing together, for example "Elite · Ancient". Standing is an ancillary role, not a rung above Elite. */
-export const rankLabel=(m:RecordData|undefined)=>[warriorRank(m),standingOf(m)].filter(Boolean).join(' · ');
+/** Current standing can coexist with an explicitly recorded clan-leadership appointment. */
+export const isClanLeaderDuty=(d:RecordData)=>normalize(d.name)==='clan leader'&&!d.house;
+export function hunterStandings(m:RecordData|undefined,data?:Dataset){
+ const values=[standingOf(m)].filter(Boolean);
+ if(m&&!m.archived&&serving(m)&&data&&active(data.duties).some(d=>d.member===m.id&&isClanLeaderDuty(d)&&currentDuty(d))&&!values.includes('Clan Leader'))values.push('Clan Leader');
+ return values;
+}
+/** Stored rank and current standing; separate fields do not imply separate authority hierarchies. */
+export const rankLabel=(m:RecordData|undefined,data?:Dataset)=>[warriorRank(m),...hunterStandings(m,data)].filter(Boolean).join(' · ');
 const promotedTo=(p:RecordData)=>p.rank==='Leader'?'Clan Leader':String(p.rank||'');
 /** Whether an advancement record confers senior standing rather than a warrior caste rank. */
 export const standingConferred=(p:RecordData)=>seniorStandings.includes(promotedTo(p));
@@ -82,18 +89,18 @@ const serving=(m:RecordData)=>!['Deceased','Departed'].includes(String(m.status)
 /** Clan Leader, Council of Ancients and Elders among serving hunters. Only the first two govern; Elders are listed with senior standing. */
 export function clanAuthority(data:Dataset){
  const members=active(data.members).filter(serving).sort((a,b)=>String(a.name).localeCompare(String(b.name)));
- const holding=(s:string)=>members.filter(m=>standingOf(m)===s);
+ const holding=(s:string)=>members.filter(m=>hunterStandings(m,data).includes(s));
  return {leaders:holding('Clan Leader'),ancients:holding('Ancient'),elders:holding('Elder')};
 }
 /** Household-senior appointments are shown as household leadership, not alongside other duties.
  * The current one decides the household's senior (the database keeps houses.senior in step); keep this pattern in line with private.is_senior_duty. */
 export const isSeniorDuty=(d:RecordData)=>/^household senior\b/i.test(String(d.name||'').trim());
 export const currentDuty=(d:RecordData)=>['Active','Acting'].includes(String(d.status))&&!d.end;
-/** Recorded senior standing in date order, with the earlier standings a hunter no longer holds. */
+/** An advancement records acquisition, not an end date. Do not infer a former office from it. */
 export function standingHistory(member:RecordData,data:Dataset){
  const entries=active(data.promotions).filter(p=>p.member===member.id&&seniorStandings.includes(promotedTo(p))).sort((a,b)=>String(a.date||'~').localeCompare(String(b.date||'~')));
- const now=standingOf(member);
- return {entries,former:[...new Set(entries.map(promotedTo))].filter(s=>s!==now)};
+ const now=hunterStandings(member,data);
+ return {entries,earlier:[...new Set(entries.map(promotedTo))].filter(s=>!now.includes(s))};
 }
 
 export type ServiceEntry={kind:Kind;id:string;title:string;role:string;date:string;era:string;state:string};

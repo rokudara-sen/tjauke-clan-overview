@@ -68,7 +68,7 @@ export function Account({data,onChanged}:{data:Dataset;onChanged:()=>void}){
   {current==='profile'&&<TabPanel id="profile"><div className="ws-split">
    <ProfileForm me={me} data={data} busy={busy} onSave={async(row,note)=>{setBusy(true);setError('');try{await hunterSave('members',row,note);toast('Profile saved. It is live on your public page.');onChanged();setWorkspace(await hunterWorkspace());}catch(e){setError((e as Error).message);}finally{setBusy(false);}}}/>
    <aside><PortraitUpload member={me.id} current={data.members.find(m=>m.id===me.id)?.portrait??me.portrait}/>
-    <section className="section"><div className="section-heading"><h2>Set by administrators</h2></div><dl className="ws-facts"><div><dt>Rank</dt><dd>{rankLabel(me)||'Not recorded'}</dd></div><div><dt>Household</dt><dd>{data.houses.find(h=>h.id===me.house)?.name||'Not recorded'}</dd></div><div><dt>Status</dt><dd>{String(me.status||'Not recorded')}</dd></div></dl><p className="section-note">Rank, standing, household, sponsor, duties and politics are changed by administrators.</p></section>
+    <section className="section"><div className="section-heading"><h2>Set by administrators</h2></div><dl className="ws-facts"><div><dt>Rank</dt><dd>{rankLabel(me,data)||'Not recorded'}</dd></div><div><dt>Household</dt><dd>{data.houses.find(h=>h.id===me.house)?.name||'Not recorded'}</dd></div><div><dt>Status</dt><dd>{String(me.status||'Not recorded')}</dd></div></dl><p className="section-note">Rank, standing, household, sponsor, duties and politics are changed by administrators.</p></section>
    </aside>
   </div></TabPanel>}
   {current==='undertakings'&&<TabPanel id="undertakings">
